@@ -1,0 +1,15 @@
+{
+  "name": "chickadeebandit-routines",
+  "version": "1.0.0",
+  "description": "Reusable routine templates and caregiver packets for Chickadee Bandit.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node dev.mjs",
+    "test": "vitest run"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
+}

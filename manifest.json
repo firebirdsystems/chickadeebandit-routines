@@ -1,0 +1,99 @@
+{
+  "id": "routines",
+  "name": "Routines",
+  "version": "1.0.0",
+  "description": "Reusable household playbooks for mornings, bedtime, travel prep, weekly resets, and share-safe caregiver instructions.",
+  "entrypoint": "index.html",
+  "runtime": "static",
+  "category": "family",
+  "tags": [
+    "routines",
+    "checklists",
+    "caregiver",
+    "kids",
+    "household",
+    "playbooks"
+  ],
+  "data_access": {
+    "reads": [
+      "family.members",
+      "family.groups",
+      "family.documents"
+    ],
+    "writes": []
+  },
+  "permissions": {
+    "default_audience": "everyone",
+    "requires_approval": false
+  },
+  "storage": "db",
+  "db_encryption": "default",
+  "db_plaintext_columns": [
+    "category",
+    "visibility",
+    "household_id",
+    "target_member_id",
+    "assigned_member_id",
+    "required",
+    "sort_order",
+    "run_date",
+    "status",
+    "template_id",
+    "run_id",
+    "packet_id",
+    "source_step_id",
+    "include_contacts",
+    "include_health_notes",
+    "include_documents",
+    "created_at",
+    "updated_at",
+    "started_at",
+    "completed_at",
+    "canceled_at",
+    "archived_at"
+  ],
+  "row_policies": {
+    "templates": {
+      "kind": "adult_writable"
+    },
+    "template_steps": {
+      "kind": "adult_writable"
+    },
+    "template_audience": {
+      "kind": "adult_writable"
+    },
+    "runs": {
+      "kind": "adult_writable"
+    },
+    "run_steps": {
+      "kind": "owner_only",
+      "member_column": "assigned_member_id",
+      "adults_bypass": true
+    },
+    "caregiver_packets": {
+      "kind": "adult_only"
+    },
+    "caregiver_packet_steps": {
+      "kind": "adult_only"
+    }
+  },
+  "publishes": [
+    "routine.started",
+    "routine.completed",
+    "routine.step_completed"
+  ],
+  "alert_on": [
+    "routine.completed"
+  ],
+  "nav": {
+    "label": "Routines"
+  },
+  "widget": {
+    "label": "Routines",
+    "size": "small"
+  },
+  "resource_limits": {
+    "max_db_bytes": 52428800
+  },
+  "icon": "🧭"
+}

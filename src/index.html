@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Routines</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--hub-font, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+      font-size: var(--hub-font-size, 15px);
+      background: var(--hub-bg, #f6f7f9);
+      color: var(--hub-text, #111827);
+      min-height: 100vh;
+    }
+    .app { max-width: 980px; margin: 0 auto; padding: 20px 16px 32px; }
+    header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+    h1 { font-size: 1.45rem; line-height: 1.2; }
+    .muted { color: var(--hub-text-muted, #6b7280); font-size: .88rem; }
+    .tabs { display: flex; gap: 4px; padding: 4px; background: var(--hub-border, #e5e7eb); border-radius: 10px; margin-bottom: 16px; overflow-x: auto; }
+    .tab { border: 0; background: transparent; color: var(--hub-text-muted, #6b7280); border-radius: 8px; padding: 8px 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .tab.active { background: var(--hub-surface, #fff); color: var(--hub-text, #111827); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    button, .btn {
+      border: 1px solid var(--hub-border, #d1d5db);
+      background: var(--hub-surface, #fff);
+      color: var(--hub-text, #111827);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: .88rem;
+      cursor: pointer;
+    }
+    .primary { background: var(--hub-primary, #111827); color: var(--hub-primary-fg, #fff); border-color: var(--hub-primary, #111827); }
+    .danger { color: #b91c1c; border-color: #fecaca; }
+    .ghost { background: transparent; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+    .card { background: var(--hub-surface, #fff); border: 1px solid var(--hub-border, #e5e7eb); border-radius: 8px; padding: 14px; }
+    .card h2, .card h3 { font-size: 1rem; margin-bottom: 4px; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .stack { display: flex; flex-direction: column; gap: 10px; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 8px; font-size: .74rem; font-weight: 800; background: #eef2ff; color: #3730a3; text-transform: capitalize; }
+    .badge.done { background: #dcfce7; color: #166534; }
+    .badge.skipped { background: #f3f4f6; color: #4b5563; }
+    .badge.active { background: #dbeafe; color: #1d4ed8; }
+    .badge.completed { background: #dcfce7; color: #166534; }
+    .badge.canceled { background: #fee2e2; color: #991b1b; }
+    .steps { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .step { border: 1px solid var(--hub-border, #e5e7eb); border-radius: 8px; padding: 10px; background: var(--hub-bg, #f9fafb); }
+    .step-title { font-weight: 800; }
+    .step.done .step-title { text-decoration: line-through; color: #166534; }
+    .step.skipped .step-title { text-decoration: line-through; color: #6b7280; }
+    .step-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .progress { height: 8px; background: var(--hub-border, #e5e7eb); border-radius: 999px; overflow: hidden; margin-top: 10px; }
+    .progress span { display: block; height: 100%; background: #16a34a; width: var(--pct, 0%); }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--hub-border, #d1d5db);
+      border-radius: 8px;
+      padding: 9px 10px;
+      font: inherit;
+      background: var(--hub-surface, #fff);
+      color: var(--hub-text, #111827);
+    }
+    textarea { min-height: 82px; resize: vertical; }
+    label { display: block; font-weight: 800; font-size: .78rem; color: var(--hub-text-muted, #4b5563); margin-bottom: 5px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+    .field { margin-bottom: 10px; }
+    .step-editor { display: grid; grid-template-columns: 1.5fr 2fr 90px 1fr 74px 42px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .step-editor input[type="checkbox"] { width: auto; }
+    .empty { padding: 24px; text-align: center; color: var(--hub-text-muted, #6b7280); border: 1px dashed var(--hub-border, #d1d5db); border-radius: 8px; background: var(--hub-surface, #fff); }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal { background: var(--hub-surface, #fff); border-radius: 10px; width: min(760px, 100%); max-height: 92vh; overflow: auto; padding: 18px; }
+    .modal h2 { margin-bottom: 12px; font-size: 1.15rem; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .packet { background: white; color: #111827; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; }
+    .packet h2 { font-size: 1.4rem; margin-bottom: 8px; }
+    .packet ol { padding-left: 22px; margin-top: 10px; }
+    .packet li { margin-bottom: 10px; }
+    @media (max-width: 720px) {
+      header { flex-direction: column; }
+      .step-editor { grid-template-columns: 1fr; }
+      .row { align-items: flex-start; flex-direction: column; }
+    }
+    @media print {
+      body * { visibility: hidden; }
+      .printable, .printable * { visibility: visible; }
+      .printable { position: absolute; inset: 0; padding: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app"><p class="muted">Loading routines...</p></div>
+
+  <script type="module">
+    import { esc, initial, memberColor, isAdult, hubAlert, hubConfirm } from "/hub-sdk.js";
+    import { STARTER_TEMPLATES, todayStr, completionSummary, canCompleteStep, sortByOrder, visibleTemplates } from "./logic.js";
+
+    const CONTEXT = window.__CONTEXT_URL ?? "";
+    const DB = window.__DB_URL ?? "";
+    const APP_ID = window.__APP_ID ?? "routines";
+    const ME = window.__CURRENT_MEMBER ?? null;
+    const EVENTS_URL = window.__EVENTS_URL ?? "";
+
+    let members = [];
+    let memberMap = new Map();
+    let templates = [];
+    let templateSteps = [];
+    let runs = [];
+    let runSteps = [];
+    let packets = [];
+    let packetSteps = [];
+    let tab = "today";
+    let modalEl = null;
+
+    const demoAdult = { id: "demo-adult", name: "Morgan", role: "adult" };
+    const demoChild = { id: "demo-child", name: "Avery", role: "child" };
+    const currentMember = () => ME ?? demoAdult;
+    const userIsAdult = () => !ME || isAdult(currentMember(), members);
+
+    function memberName(id, fallback = "Anyone") {
+      if (!id) return fallback;
+      return memberMap.get(id)?.name ?? fallback;
+    }
+
+    async function db(sql, params = []) {
+      if (!DB) return demoDb(sql, params);
+      const res = await fetch(DB, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sql, params })
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || "Database request failed");
+      return json;
+    }
+
+    async function publish(type, subject_id, payload = {}) {
+      const url = EVENTS_URL || `/run/${APP_ID}/api/events`;
+      await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, subject_id, payload })
+      }).catch(() => {});
+    }
+
+    async function loadMembers() {
+      if (!CONTEXT) {
+        members = [demoAdult, demoChild];
+      } else {
+        const res = await fetch(`${CONTEXT}?keys=family.members,family.groups,family.documents`);
+        const ctx = await res.json();
+        members = ctx["family.members"] ?? [];
+      }
+      memberMap = new Map(members.map((m) => [m.id, m]));
+    }
+
+    async function loadData() {
+      if (!DB) seedDemo();
+      const [t, ts, r, rs, p, ps] = await Promise.all([
+        db("SELECT * FROM app_routines__templates ORDER BY created_at DESC"),
+        db("SELECT * FROM app_routines__template_steps ORDER BY sort_order ASC"),
+        db("SELECT * FROM app_routines__runs ORDER BY started_at DESC"),
+        db("SELECT * FROM app_routines__run_steps ORDER BY sort_order ASC"),
+        db("SELECT * FROM app_routines__caregiver_packets ORDER BY created_at DESC"),
+        db("SELECT * FROM app_routines__caregiver_packet_steps ORDER BY sort_order ASC")
+      ]);
+      templates = t.rows ?? [];
+      templateSteps = ts.rows ?? [];
+      runs = r.rows ?? [];
+      runSteps = rs.rows ?? [];
+      packets = p.rows ?? [];
+      packetSteps = ps.rows ?? [];
+    }
+
+    function seedDemo() {
+      if (templates.length) return;
+      const now = new Date().toISOString();
+      STARTER_TEMPLATES.slice(0, 3).forEach((starter, i) => {
+        const template = {
+          id: `demo-template-${i}`,
+          title: starter.title,
+          description: starter.description,
+          category: starter.category,
+          visibility: "everyone",
+          owner_member_id: demoAdult.id,
+          target_member_id: i < 2 ? demoChild.id : null,
+          default_start_time: starter.default_start_time,
+          default_duration_minutes: 45,
+          archived_at: null,
+          created_at: now,
+          updated_at: now
+        };
+        templates.push(template);
+        starter.steps.forEach((step, stepIndex) => {
+          templateSteps.push({
+            id: `${template.id}-step-${stepIndex}`,
+            template_id: template.id,
+            title: step[0],
+            details: step[1],
+            suggested_offset_minutes: step[2],
+            assigned_member_id: step[3] === "kid" ? demoChild.id : null,
+            role_label: step[3],
+            required: step[4] ? 1 : 0,
+            sort_order: stepIndex,
+            created_at: now,
+            updated_at: now
+          });
+        });
+      });
+    }
+
+    function demoDb(sql) {
+      if (sql.includes("app_routines__templates")) return { rows: templates };
+      if (sql.includes("app_routines__template_steps")) return { rows: templateSteps };
+      if (sql.includes("app_routines__runs")) return { rows: runs };
+      if (sql.includes("app_routines__run_steps")) return { rows: runSteps };
+      if (sql.includes("app_routines__caregiver_packets")) return { rows: packets };
+      if (sql.includes("app_routines__caregiver_packet_steps")) return { rows: packetSteps };
+      return { rows: [] };
+    }
+
+    function render() {
+      document.getElementById("app").innerHTML = `
+        <header>
+          <div>
+            <h1>Routines</h1>
+            <p class="muted">Reusable playbooks for household flow and share-safe caregiver instructions.</p>
+          </div>
+          <div class="toolbar">
+            ${userIsAdult() ? `<button class="primary" onclick="openTemplateModal()">New Template</button><button onclick="openRunModal()">Start Routine</button>` : ""}
+          </div>
+        </header>
+        <nav class="tabs">
+          ${["today", "templates", "packets", "history"].map((key) => `<button class="tab ${tab === key ? "active" : ""}" onclick="setTab('${key}')">${key[0].toUpperCase() + key.slice(1)}</button>`).join("")}
+        </nav>
+        ${tab === "today" ? renderToday() : ""}
+        ${tab === "templates" ? renderTemplates() : ""}
+        ${tab === "packets" ? renderPackets() : ""}
+        ${tab === "history" ? renderHistory() : ""}
+      `;
+    }
+
+    function renderToday() {
+      const active = runs.filter((r) => r.status === "active");
+      if (!active.length) return `<div class="empty">No active routines. Start one from a template when the day needs a little structure.</div>`;
+      return `<div class="grid">${active.map(renderRunCard).join("")}</div>`;
+    }
+
+    function renderHistory() {
+      const history = runs.filter((r) => r.status !== "active");
+      if (!history.length) return `<div class="empty">Completed and canceled routines will show up here.</div>`;
+      return `<div class="stack">${history.map(renderRunCard).join("")}</div>`;
+    }
+
+    function renderRunCard(run) {
+      const steps = sortByOrder(runSteps.filter((s) => s.run_id === run.id));
+      const summary = completionSummary(steps);
+      const pct = summary.total ? Math.round((summary.done / summary.total) * 100) : 0;
+      return `
+        <section class="card">
+          <div class="row">
+            <div>
+              <h2>${esc(run.title_snapshot)}</h2>
+              <p class="muted">${esc(run.run_date)} · ${esc(memberName(run.target_member_id, "Everyone"))}${run.caregiver_label ? ` · ${esc(run.caregiver_label)}` : ""}</p>
+            </div>
+            <span class="badge ${esc(run.status)}">${esc(run.status)}</span>
+          </div>
+          <div class="progress" aria-label="${pct}% complete"><span style="--pct:${pct}%"></span></div>
+          <p class="muted">${summary.done}/${summary.total} done · ${summary.doneRequired}/${summary.required} required</p>
+          <div class="steps">${steps.map((step) => renderRunStep(run, step)).join("")}</div>
+          ${run.status === "active" && userIsAdult() ? `<div class="toolbar"><button onclick="completeRunIfReady('${run.id}')">Finish Routine</button><button class="danger" onclick="cancelRun('${run.id}')">Cancel</button></div>` : ""}
+        </section>
+      `;
+    }
+
+    function renderRunStep(run, step) {
+      const canWrite = run.status === "active" && canCompleteStep(step, currentMember());
+      return `
+        <div class="step ${esc(step.status)}">
+          <div class="row">
+            <div>
+              <div class="step-title">${esc(step.title_snapshot)}</div>
+              ${step.details_snapshot ? `<p class="muted">${esc(step.details_snapshot)}</p>` : ""}
+              <p class="muted">${step.required ? "Required" : "Optional"} · ${esc(memberName(step.assigned_member_id, step.role_label || "Anyone"))}</p>
+            </div>
+            <span class="badge ${esc(step.status)}">${esc(step.status)}</span>
+          </div>
+          ${canWrite ? `<div class="step-actions"><button onclick="setStepStatus('${step.id}','done')">Done</button><button onclick="setStepStatus('${step.id}','skipped')">Skip</button><button class="ghost" onclick="setStepStatus('${step.id}','pending')">Reset</button></div>` : ""}
+        </div>
+      `;
+    }
+
+    function renderTemplates() {
+      const rows = visibleTemplates(templates);
+      return `
+        <div class="toolbar">
+          ${userIsAdult() ? `<button onclick="installStarterTemplates()">Add Starter Templates</button>` : ""}
+        </div>
+        ${rows.length ? `<div class="grid">${rows.map(renderTemplateCard).join("")}</div>` : `<div class="empty">No templates yet. Add starter templates or create your own.</div>`}
+      `;
+    }
+
+    function renderTemplateCard(template) {
+      const steps = sortByOrder(templateSteps.filter((s) => s.template_id === template.id));
+      return `
+        <section class="card">
+          <div class="row">
+            <div>
+              <h2>${esc(template.title)}</h2>
+              <p class="muted">${esc(template.description || "")}</p>
+            </div>
+            <span class="badge">${esc(template.visibility)}</span>
+          </div>
+          <p class="muted">${esc(template.category)} · ${steps.length} steps · ${esc(memberName(template.target_member_id, "Everyone"))}</p>
+          <div class="steps">${steps.map((s) => `<div class="step"><div class="step-title">${esc(s.title)}</div><p class="muted">${esc(s.details || "")}</p></div>`).join("")}</div>
+          ${userIsAdult() ? `<div class="toolbar"><button onclick="openRunModal('${template.id}')">Start</button><button onclick="openTemplateModal('${template.id}')">Edit</button><button onclick="openPacketModal('${template.id}')">Packet</button><button class="danger" onclick="archiveTemplate('${template.id}')">Archive</button></div>` : ""}
+        </section>
+      `;
+    }
+
+    function renderPackets() {
+      if (!userIsAdult()) return `<div class="empty">Caregiver packets are adult-only.</div>`;
+      return `
+        <div class="toolbar"><button class="primary" onclick="openPacketModal()">New Packet</button></div>
+        ${packets.length ? `<div class="stack">${packets.map(renderPacketCard).join("")}</div>` : `<div class="empty">Create a printable packet with only the instructions a caregiver should see.</div>`}
+      `;
+    }
+
+    function renderPacketCard(packet) {
+      const steps = sortByOrder(packetSteps.filter((s) => s.packet_id === packet.id));
+      return `
+        <section class="card">
+          <div class="row">
+            <div><h2>${esc(packet.title)}</h2><p class="muted">${steps.length} shared steps · created ${esc(packet.created_at.slice(0, 10))}</p></div>
+            <button onclick="openPacketView('${packet.id}')">View / Print</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function openModal(html) {
+      closeModal();
+      modalEl = document.createElement("div");
+      modalEl.className = "modal-backdrop";
+      modalEl.innerHTML = `<div class="modal">${html}</div>`;
+      modalEl.addEventListener("click", (event) => { if (event.target === modalEl) closeModal(); });
+      document.body.appendChild(modalEl);
+    }
+
+    window.closeModal = () => closeModal();
+    function closeModal() { modalEl?.remove(); modalEl = null; }
+    window.setTab = (next) => { tab = next; render(); };
+
+    window.openTemplateModal = (templateId = "") => {
+      const template = templates.find((t) => t.id === templateId) ?? {
+        title: "", description: "", category: "household", visibility: "everyone", target_member_id: "", default_start_time: "", default_duration_minutes: 45
+      };
+      const steps = templateId ? sortByOrder(templateSteps.filter((s) => s.template_id === templateId)) : [{ title: "", details: "", suggested_offset_minutes: 0, assigned_member_id: "", role_label: "", required: 1 }];
+      openModal(`
+        <h2>${templateId ? "Edit Template" : "New Template"}</h2>
+        <form id="template-form">
+          <div class="form-grid">
+            ${field("Title", "title", template.title)}
+            ${field("Category", "category", template.category)}
+            ${selectField("Visibility", "visibility", template.visibility, [["everyone","Everyone"],["adults","Adults"],["members","Selected members"]])}
+            ${memberSelect("Target", "target_member_id", template.target_member_id)}
+            ${field("Default time", "default_start_time", template.default_start_time, "time")}
+            ${field("Minutes", "default_duration_minutes", template.default_duration_minutes, "number")}
+          </div>
+          <div class="field"><label>Description</label><textarea name="description">${esc(template.description || "")}</textarea></div>
+          <label>Steps</label>
+          <div id="step-editors">${steps.map((s, i) => stepEditor(s, i)).join("")}</div>
+          <button type="button" onclick="addStepEditor()">Add Step</button>
+          <div class="modal-actions"><button type="button" onclick="closeModal()">Cancel</button><button class="primary">Save</button></div>
+        </form>
+      `);
+      document.getElementById("template-form").addEventListener("submit", (event) => saveTemplate(event, templateId));
+    };
+
+    function field(label, name, value = "", type = "text") {
+      return `<div class="field"><label>${label}</label><input name="${name}" type="${type}" value="${esc(value ?? "")}"></div>`;
+    }
+
+    function selectField(label, name, value, options) {
+      return `<div class="field"><label>${label}</label><select name="${name}">${options.map(([v,l]) => `<option value="${v}" ${v === value ? "selected" : ""}>${l}</option>`).join("")}</select></div>`;
+    }
+
+    function memberSelect(label, name, value = "") {
+      return `<div class="field"><label>${label}</label><select name="${name}"><option value="">Everyone</option>${members.map((m) => `<option value="${esc(m.id)}" ${m.id === value ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select></div>`;
+    }
+
+    function stepEditor(step, i) {
+      return `<div class="step-editor" data-step>
+        <input name="step_title" placeholder="Step title" value="${esc(step.title ?? step.title_snapshot ?? "")}">
+        <input name="step_details" placeholder="Details" value="${esc(step.details ?? step.details_snapshot ?? "")}">
+        <input name="step_offset" type="number" placeholder="Minutes" value="${esc(step.suggested_offset_minutes ?? 0)}">
+        <select name="step_member"><option value="">Anyone</option>${members.map((m) => `<option value="${esc(m.id)}" ${m.id === step.assigned_member_id ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select>
+        <label><input name="step_required" type="checkbox" ${Number(step.required ?? 1) === 1 ? "checked" : ""}> Req</label>
+        <button type="button" onclick="this.closest('[data-step]').remove()">×</button>
+      </div>`;
+    }
+
+    window.addStepEditor = () => document.getElementById("step-editors").insertAdjacentHTML("beforeend", stepEditor({}, Date.now()));
+
+    async function saveTemplate(event, templateId) {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const now = new Date().toISOString();
+      const id = templateId || crypto.randomUUID();
+      const row = {
+        id,
+        title: form.get("title").toString().trim() || "Untitled Routine",
+        description: form.get("description").toString(),
+        category: form.get("category").toString() || "household",
+        visibility: form.get("visibility").toString(),
+        owner_member_id: currentMember().id,
+        target_member_id: form.get("target_member_id").toString() || null,
+        default_start_time: form.get("default_start_time").toString() || null,
+        default_duration_minutes: Number(form.get("default_duration_minutes") || 45),
+        archived_at: null,
+        created_at: templates.find((t) => t.id === id)?.created_at ?? now,
+        updated_at: now
+      };
+      if (templateId) {
+        await db("UPDATE app_routines__templates SET title=?, description=?, category=?, visibility=?, target_member_id=?, default_start_time=?, default_duration_minutes=?, updated_at=? WHERE id=?", [row.title, row.description, row.category, row.visibility, row.target_member_id, row.default_start_time, row.default_duration_minutes, row.updated_at, id]);
+        templates = templates.map((t) => t.id === id ? { ...t, ...row } : t);
+        await db("DELETE FROM app_routines__template_steps WHERE template_id=?", [id]);
+        templateSteps = templateSteps.filter((s) => s.template_id !== id);
+      } else {
+        await db("INSERT INTO app_routines__templates (id,title,description,category,visibility,owner_member_id,target_member_id,default_start_time,default_duration_minutes,archived_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.title,row.description,row.category,row.visibility,row.owner_member_id,row.target_member_id,row.default_start_time,row.default_duration_minutes,row.archived_at,row.created_at,row.updated_at]);
+        templates.unshift(row);
+      }
+      const stepRows = [...document.querySelectorAll("[data-step]")].map((el, sort_order) => ({
+        id: crypto.randomUUID(),
+        template_id: id,
+        title: el.querySelector('[name="step_title"]').value.trim() || "Untitled step",
+        details: el.querySelector('[name="step_details"]').value,
+        suggested_offset_minutes: Number(el.querySelector('[name="step_offset"]').value || 0),
+        assigned_member_id: el.querySelector('[name="step_member"]').value || null,
+        role_label: "",
+        required: el.querySelector('[name="step_required"]').checked ? 1 : 0,
+        sort_order,
+        created_at: now,
+        updated_at: now
+      }));
+      for (const step of stepRows) {
+        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", [step.id,step.template_id,step.title,step.details,step.suggested_offset_minutes,step.assigned_member_id,step.role_label,step.required,step.sort_order,step.created_at,step.updated_at]);
+      }
+      templateSteps.push(...stepRows);
+      closeModal();
+      render();
+    }
+
+    window.installStarterTemplates = async () => {
+      for (const starter of STARTER_TEMPLATES) await createTemplateFromStarter(starter);
+      render();
+    };
+
+    async function createTemplateFromStarter(starter) {
+      if (templates.some((t) => t.title === starter.title && !t.archived_at)) return;
+      const now = new Date().toISOString();
+      const id = crypto.randomUUID();
+      const target = starter.category === "kids" ? members.find((m) => m.role === "child")?.id ?? null : null;
+      await db("INSERT INTO app_routines__templates (id,title,description,category,visibility,owner_member_id,target_member_id,default_start_time,default_duration_minutes,archived_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [id,starter.title,starter.description,starter.category,"everyone",currentMember().id,target,starter.default_start_time,45,null,now,now]);
+      templates.unshift({ id, title: starter.title, description: starter.description, category: starter.category, visibility: "everyone", owner_member_id: currentMember().id, target_member_id: target, default_start_time: starter.default_start_time, default_duration_minutes: 45, archived_at: null, created_at: now, updated_at: now });
+      for (const [sort_order, step] of starter.steps.entries()) {
+        const row = { id: crypto.randomUUID(), template_id: id, title: step[0], details: step[1], suggested_offset_minutes: step[2], assigned_member_id: step[3] === "kid" ? target : null, role_label: step[3], required: step[4] ? 1 : 0, sort_order, created_at: now, updated_at: now };
+        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.template_id,row.title,row.details,row.suggested_offset_minutes,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.created_at,row.updated_at]);
+        templateSteps.push(row);
+      }
+    }
+
+    window.openRunModal = (templateId = "") => {
+      const options = visibleTemplates(templates);
+      if (!options.length) return hubAlert("Create a template first.", { description: "Routines start from reusable templates." });
+      const chosen = templateId || options[0].id;
+      openModal(`
+        <h2>Start Routine</h2>
+        <form id="run-form">
+          ${selectField("Template", "template_id", chosen, options.map((t) => [t.id, t.title]))}
+          <div class="form-grid">
+            ${field("Date", "run_date", todayStr(), "date")}
+            ${memberSelect("For", "target_member_id", templates.find((t) => t.id === chosen)?.target_member_id ?? "")}
+          </div>
+          ${field("Caregiver label", "caregiver_label", "")}
+          <div class="field"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="modal-actions"><button type="button" onclick="closeModal()">Cancel</button><button class="primary">Start</button></div>
+        </form>
+      `);
+      document.getElementById("run-form").addEventListener("submit", startRun);
+    };
+
+    async function startRun(event) {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const template = templates.find((t) => t.id === form.get("template_id"));
+      if (!template) return;
+      const now = new Date().toISOString();
+      const run = { id: crypto.randomUUID(), template_id: template.id, title_snapshot: template.title, run_date: form.get("run_date").toString(), status: "active", started_by_member_id: currentMember().id, target_member_id: form.get("target_member_id").toString() || null, caregiver_label: form.get("caregiver_label").toString(), notes: form.get("notes").toString(), started_at: now, completed_at: null, canceled_at: null };
+      await db("INSERT INTO app_routines__runs (id,template_id,title_snapshot,run_date,status,started_by_member_id,target_member_id,caregiver_label,notes,started_at,completed_at,canceled_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [run.id,run.template_id,run.title_snapshot,run.run_date,run.status,run.started_by_member_id,run.target_member_id,run.caregiver_label,run.notes,run.started_at,run.completed_at,run.canceled_at]);
+      runs.unshift(run);
+      const steps = sortByOrder(templateSteps.filter((s) => s.template_id === template.id));
+      for (const step of steps) {
+        const row = { id: crypto.randomUUID(), run_id: run.id, template_step_id: step.id, title_snapshot: step.title, details_snapshot: step.details, assigned_member_id: step.assigned_member_id || run.target_member_id, role_label: step.role_label, required: step.required, sort_order: step.sort_order, status: "pending", completed_by_member_id: null, completed_at: null };
+        await db("INSERT INTO app_routines__run_steps (id,run_id,template_step_id,title_snapshot,details_snapshot,assigned_member_id,role_label,required,sort_order,status,completed_by_member_id,completed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.run_id,row.template_step_id,row.title_snapshot,row.details_snapshot,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.status,row.completed_by_member_id,row.completed_at]);
+        runSteps.push(row);
+      }
+      publish("routine.started", run.id, { title: run.title_snapshot, run_date: run.run_date });
+      tab = "today";
+      closeModal();
+      render();
+    }
+
+    window.setStepStatus = async (stepId, status) => {
+      const step = runSteps.find((s) => s.id === stepId);
+      if (!step || !canCompleteStep(step, currentMember())) return;
+      const completedAt = status === "done" || status === "skipped" ? new Date().toISOString() : null;
+      const completedBy = completedAt ? currentMember().id : null;
+      await db("UPDATE app_routines__run_steps SET status=?, completed_by_member_id=?, completed_at=? WHERE id=?", [status, completedBy, completedAt, stepId]);
+      Object.assign(step, { status, completed_by_member_id: completedBy, completed_at: completedAt });
+      if (status === "done") publish("routine.step_completed", step.run_id, { step_id: step.id, title: step.title_snapshot });
+      render();
+    };
+
+    window.completeRunIfReady = async (runId) => {
+      const steps = runSteps.filter((s) => s.run_id === runId);
+      const summary = completionSummary(steps);
+      if (!summary.isComplete) return hubAlert("Required steps are not finished yet.", { description: "Complete required steps before finishing the routine." });
+      await setRunStatus(runId, "completed");
+    };
+
+    window.cancelRun = async (runId) => {
+      if (await hubConfirm({ message: "Cancel this routine?", confirmLabel: "Cancel Routine", destructive: true })) {
+        await setRunStatus(runId, "canceled");
+      }
+    };
+
+    async function setRunStatus(runId, status) {
+      const now = new Date().toISOString();
+      const completedAt = status === "completed" ? now : null;
+      const canceledAt = status === "canceled" ? now : null;
+      await db("UPDATE app_routines__runs SET status=?, completed_at=?, canceled_at=? WHERE id=?", [status, completedAt, canceledAt, runId]);
+      const run = runs.find((r) => r.id === runId);
+      Object.assign(run, { status, completed_at: completedAt, canceled_at: canceledAt });
+      if (status === "completed") publish("routine.completed", runId, { title: run.title_snapshot });
+      render();
+    }
+
+    window.archiveTemplate = async (templateId) => {
+      if (!(await hubConfirm({ message: "Archive this template?", confirmLabel: "Archive" }))) return;
+      const now = new Date().toISOString();
+      await db("UPDATE app_routines__templates SET archived_at=?, updated_at=? WHERE id=?", [now, now, templateId]);
+      templates = templates.map((t) => t.id === templateId ? { ...t, archived_at: now, updated_at: now } : t);
+      render();
+    };
+
+    window.openPacketModal = (templateId = "") => {
+      const options = visibleTemplates(templates);
+      const chosen = templateId || options[0]?.id || "";
+      const steps = chosen ? sortByOrder(templateSteps.filter((s) => s.template_id === chosen)) : [];
+      openModal(`
+        <h2>Caregiver Packet</h2>
+        <form id="packet-form">
+          ${selectField("Source template", "template_id", chosen, options.map((t) => [t.id, t.title]))}
+          ${field("Packet title", "title", chosen ? `${templates.find((t) => t.id === chosen)?.title} Instructions` : "Caregiver Instructions")}
+          <div class="field"><label>Safe notes</label><textarea name="safe_notes" placeholder="Only include information this caregiver should see."></textarea></div>
+          <div class="form-grid">
+            <label><input type="checkbox" name="include_contacts"> Include contacts reminder</label>
+            <label><input type="checkbox" name="include_health_notes"> Include health notes reminder</label>
+            <label><input type="checkbox" name="include_documents"> Include document reminder</label>
+          </div>
+          <label>Shared steps</label>
+          <div class="stack">${steps.map((s) => `<label><input type="checkbox" name="step_id" value="${esc(s.id)}" checked> ${esc(s.title)}</label>`).join("")}</div>
+          <div class="modal-actions"><button type="button" onclick="closeModal()">Cancel</button><button class="primary">Create Packet</button></div>
+        </form>
+      `);
+      document.getElementById("packet-form").addEventListener("submit", savePacket);
+    };
+
+    async function savePacket(event) {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const now = new Date().toISOString();
+      const packet = { id: crypto.randomUUID(), template_id: form.get("template_id").toString() || null, run_id: null, title: form.get("title").toString().trim() || "Caregiver Instructions", safe_notes: form.get("safe_notes").toString(), include_contacts: form.has("include_contacts") ? 1 : 0, include_health_notes: form.has("include_health_notes") ? 1 : 0, include_documents: form.has("include_documents") ? 1 : 0, created_by_member_id: currentMember().id, created_at: now, updated_at: now };
+      await db("INSERT INTO app_routines__caregiver_packets (id,template_id,run_id,title,safe_notes,include_contacts,include_health_notes,include_documents,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", [packet.id,packet.template_id,packet.run_id,packet.title,packet.safe_notes,packet.include_contacts,packet.include_health_notes,packet.include_documents,packet.created_by_member_id,packet.created_at,packet.updated_at]);
+      packets.unshift(packet);
+      const selected = new Set(form.getAll("step_id"));
+      const steps = sortByOrder(templateSteps.filter((s) => selected.has(s.id)));
+      for (const [sort_order, step] of steps.entries()) {
+        const row = { id: crypto.randomUUID(), packet_id: packet.id, source_step_id: step.id, title_snapshot: step.title, details_snapshot: step.details, sort_order };
+        await db("INSERT INTO app_routines__caregiver_packet_steps (id,packet_id,source_step_id,title_snapshot,details_snapshot,sort_order) VALUES (?,?,?,?,?,?)", [row.id,row.packet_id,row.source_step_id,row.title_snapshot,row.details_snapshot,row.sort_order]);
+        packetSteps.push(row);
+      }
+      closeModal();
+      tab = "packets";
+      render();
+    }
+
+    window.openPacketView = (packetId) => {
+      const packet = packets.find((p) => p.id === packetId);
+      const steps = sortByOrder(packetSteps.filter((s) => s.packet_id === packetId));
+      openModal(`
+        <div class="printable">
+          <div class="packet">
+            <h2>${esc(packet.title)}</h2>
+            ${packet.safe_notes ? `<p>${esc(packet.safe_notes)}</p>` : ""}
+            <ol>${steps.map((s) => `<li><strong>${esc(s.title_snapshot)}</strong>${s.details_snapshot ? `<br>${esc(s.details_snapshot)}` : ""}</li>`).join("")}</ol>
+            ${packet.include_contacts ? `<p><strong>Contacts:</strong> Use the household contact list provided by the adult.</p>` : ""}
+            ${packet.include_health_notes ? `<p><strong>Health notes:</strong> Review only the health information the adult has separately provided.</p>` : ""}
+            ${packet.include_documents ? `<p><strong>Documents:</strong> Use only the documents the adult selected for this visit.</p>` : ""}
+          </div>
+        </div>
+        <div class="modal-actions no-print"><button onclick="closeModal()">Close</button><button class="primary" onclick="window.print()">Print</button></div>
+      `);
+    };
+
+    await loadMembers();
+    await loadData();
+    render();
+  </script>
+</body>
+</html>
