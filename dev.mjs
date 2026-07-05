@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 const CACHE = path.join(__dirname, ".hub-sdk.js");
-const SDK_URL = "https://raw.githubusercontent.com/firebirdsystems/chickadeebandit-app-template/main/hub-sdk.js";
+const SDK_URL = "https://www.chickadeebandit.com/hub-sdk.js";
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "manifest.json"), "utf8"));
