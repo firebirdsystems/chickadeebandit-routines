@@ -40,5 +40,11 @@ if (manifest.storage === "db") {
 }
 
 fs.mkdirSync(DIST, { recursive: true });
-fs.writeFileSync(path.join(DIST, "bundle.json"), JSON.stringify({ manifest, migrations, files }, null, 2), "utf8");
+// ── Read scenarios.json (optional per-app behavioral specs) ───────────────────
+let scenarios;
+const SCENARIOS_FILE = path.join(ROOT, "scenarios.json");
+if (fs.existsSync(SCENARIOS_FILE)) {
+  scenarios = JSON.parse(fs.readFileSync(SCENARIOS_FILE, "utf8"));
+}
+fs.writeFileSync(path.join(DIST, "bundle.json"), JSON.stringify({ manifest, migrations, files, ...(scenarios ? { scenarios } : {}) }, null, 2), "utf8");
 console.log(`Built ${Object.keys(files).length} file(s) -> dist/bundle.json`);
