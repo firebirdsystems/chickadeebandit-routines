@@ -104,6 +104,12 @@
     const ME = window.__CURRENT_MEMBER ?? null;
     const EVENTS_URL = window.__EVENTS_URL ?? "";
 
+    // Neutralize DB-derived ids before interpolating into inline on* handlers:
+    // HTML escaping does not protect a JS-string context inside an attribute, and
+    // a member can write an attacker-chosen id via raw /api/db. Legit ids are
+    // UUIDs, so restricting to [A-Za-z0-9_-] is lossless and injection-proof.
+    const sid = v => String(v ?? "").replace(/[^A-Za-z0-9_-]/g, "");
+
     let members = [];
     let memberMap = new Map();
     let templates = [];
@@ -271,7 +277,7 @@
           <div class="progress" aria-label="${pct}% complete"><span style="--pct:${pct}%"></span></div>
           <p class="muted">${summary.done}/${summary.total} done · ${summary.doneRequired}/${summary.required} required</p>
           <div class="steps">${steps.map((step) => renderRunStep(run, step)).join("")}</div>
-          ${run.status === "active" && userIsAdult() ? `<div class="toolbar"><button onclick="completeRunIfReady('${run.id}')">Finish Routine</button><button class="danger" onclick="cancelRun('${run.id}')">Cancel</button></div>` : ""}
+          ${run.status === "active" && userIsAdult() ? `<div class="toolbar"><button onclick="completeRunIfReady('${sid(run.id)}')">Finish Routine</button><button class="danger" onclick="cancelRun('${sid(run.id)}')">Cancel</button></div>` : ""}
         </section>
       `;
     }
@@ -288,7 +294,7 @@
             </div>
             <span class="badge ${esc(step.status)}">${esc(step.status)}</span>
           </div>
-          ${canWrite ? `<div class="step-actions"><button onclick="setStepStatus('${step.id}','done')">Done</button><button onclick="setStepStatus('${step.id}','skipped')">Skip</button><button class="ghost" onclick="setStepStatus('${step.id}','pending')">Reset</button></div>` : ""}
+          ${canWrite ? `<div class="step-actions"><button onclick="setStepStatus('${sid(step.id)}','done')">Done</button><button onclick="setStepStatus('${sid(step.id)}','skipped')">Skip</button><button class="ghost" onclick="setStepStatus('${sid(step.id)}','pending')">Reset</button></div>` : ""}
         </div>
       `;
     }
@@ -316,7 +322,7 @@
           </div>
           <p class="muted">${esc(template.category)} · ${steps.length} steps · ${esc(memberName(template.target_member_id, "Everyone"))}</p>
           <div class="steps">${steps.map((s) => `<div class="step"><div class="step-title">${esc(s.title)}</div><p class="muted">${esc(s.details || "")}</p></div>`).join("")}</div>
-          ${userIsAdult() ? `<div class="toolbar"><button onclick="openRunModal('${template.id}')">Start</button><button onclick="openTemplateModal('${template.id}')">Edit</button><button onclick="openPacketModal('${template.id}')">Packet</button><button class="danger" onclick="archiveTemplate('${template.id}')">Archive</button></div>` : ""}
+          ${userIsAdult() ? `<div class="toolbar"><button onclick="openRunModal('${sid(template.id)}')">Start</button><button onclick="openTemplateModal('${sid(template.id)}')">Edit</button><button onclick="openPacketModal('${sid(template.id)}')">Packet</button><button class="danger" onclick="archiveTemplate('${sid(template.id)}')">Archive</button></div>` : ""}
         </section>
       `;
     }
@@ -335,7 +341,7 @@
         <section class="card">
           <div class="row">
             <div><h2>${esc(packet.title)}</h2><p class="muted">${steps.length} shared steps · created ${esc(packet.created_at.slice(0, 10))}</p></div>
-            <button onclick="openPacketView('${packet.id}')">View / Print</button>
+            <button onclick="openPacketView('${sid(packet.id)}')">View / Print</button>
           </div>
         </section>
       `;
@@ -365,7 +371,7 @@
           <div class="form-grid">
             ${field("Title", "title", template.title)}
             ${field("Category", "category", template.category)}
-            ${selectField("Visibility", "visibility", template.visibility, [["everyone","Everyone"],["adults","Adults"],["members","Selected members"]])}
+            ${selectField("Visibility", "visibility", template.visibility, [["everyone","Everyone"],["adults","Adults"]])}
             ${memberSelect("Target", "target_member_id", template.target_member_id)}
             ${field("Default time", "default_start_time", template.default_start_time, "time")}
             ${field("Minutes", "default_duration_minutes", template.default_duration_minutes, "number")}

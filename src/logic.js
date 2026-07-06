@@ -95,7 +95,11 @@ export function completionSummary(steps) {
 export function canCompleteStep(step, member) {
   if (!member) return true;
   if (member.role === "adult") return true;
-  return !step.assigned_member_id || step.assigned_member_id === member.id;
+  // Mirror the run_steps row policy (owner_only on assigned_member_id,
+  // adults_bypass): a non-adult may only complete a step assigned to them. An
+  // unassigned step has no owner, so the server rejects a non-adult write — don't
+  // show a Done button that would silently 403.
+  return !!step.assigned_member_id && step.assigned_member_id === member.id;
 }
 
 export function sortByOrder(rows) {
