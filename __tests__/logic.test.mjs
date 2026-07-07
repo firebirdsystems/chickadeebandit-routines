@@ -30,10 +30,12 @@ describe("routines logic", () => {
     ]).isComplete).toBe(false);
   });
 
-  it("limits non-adult completion to assigned or unassigned steps", () => {
+  it("limits non-adult completion to steps assigned to them", () => {
     const child = { id: "kid-1", role: "child" };
     expect(canCompleteStep({ assigned_member_id: "kid-1" }, child)).toBe(true);
-    expect(canCompleteStep({ assigned_member_id: null }, child)).toBe(true);
+    // Unassigned steps have no owner under the run_steps owner_only policy, so
+    // the server rejects a non-adult write — don't offer a Done button.
+    expect(canCompleteStep({ assigned_member_id: null }, child)).toBe(false);
     expect(canCompleteStep({ assigned_member_id: "kid-2" }, child)).toBe(false);
   });
 

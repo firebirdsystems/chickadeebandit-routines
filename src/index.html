@@ -453,7 +453,7 @@
         updated_at: now
       }));
       for (const step of stepRows) {
-        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", [step.id,step.template_id,step.title,step.details,step.suggested_offset_minutes,step.assigned_member_id,step.role_label,step.required,step.sort_order,step.created_at,step.updated_at]);
+        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [step.id,step.template_id,step.title,step.details,step.suggested_offset_minutes,step.assigned_member_id,step.role_label,step.required,step.sort_order,currentMember().id,step.created_at,step.updated_at]);
       }
       templateSteps.push(...stepRows);
       closeModal();
@@ -473,8 +473,8 @@
       await db("INSERT INTO app_routines__templates (id,title,description,category,visibility,owner_member_id,target_member_id,default_start_time,default_duration_minutes,archived_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [id,starter.title,starter.description,starter.category,"everyone",currentMember().id,target,starter.default_start_time,45,null,now,now]);
       templates.unshift({ id, title: starter.title, description: starter.description, category: starter.category, visibility: "everyone", owner_member_id: currentMember().id, target_member_id: target, default_start_time: starter.default_start_time, default_duration_minutes: 45, archived_at: null, created_at: now, updated_at: now });
       for (const [sort_order, step] of starter.steps.entries()) {
-        const row = { id: crypto.randomUUID(), template_id: id, title: step[0], details: step[1], suggested_offset_minutes: step[2], assigned_member_id: step[3] === "kid" ? target : null, role_label: step[3], required: step[4] ? 1 : 0, sort_order, created_at: now, updated_at: now };
-        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.template_id,row.title,row.details,row.suggested_offset_minutes,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.created_at,row.updated_at]);
+        const row = { id: crypto.randomUUID(), template_id: id, title: step[0], details: step[1], suggested_offset_minutes: step[2], assigned_member_id: step[3] === "kid" ? target : null, role_label: step[3], required: step[4] ? 1 : 0, sort_order, created_by_member_id: currentMember().id, created_at: now, updated_at: now };
+        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.template_id,row.title,row.details,row.suggested_offset_minutes,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.created_by_member_id,row.created_at,row.updated_at]);
         templateSteps.push(row);
       }
     }

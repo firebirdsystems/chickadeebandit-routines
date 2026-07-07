@@ -63,12 +63,14 @@
     "template_steps": {
       "kind": "inherit_visibility",
       "fk_column": "template_id",
-      "parent_table": "templates"
+      "parent_table": "templates",
+      "writer_column": "created_by_member_id"
     },
     "template_audience": {
       "kind": "inherit_visibility",
       "fk_column": "template_id",
-      "parent_table": "templates"
+      "parent_table": "templates",
+      "writer_column": "created_by_member_id"
     },
     "runs": {
       "kind": "adult_writable"

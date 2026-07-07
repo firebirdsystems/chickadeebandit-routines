@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS app_routines__template_steps (
   role_label TEXT NOT NULL DEFAULT '',
   required INTEGER NOT NULL DEFAULT 1 CHECK (required IN (0,1)),
   sort_order INTEGER NOT NULL DEFAULT 0,
+  created_by_member_id TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   PRIMARY KEY (id),
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS app_routines__template_audience (
   template_id TEXT NOT NULL,
   member_id TEXT,
   group_id TEXT,
+  created_by_member_id TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (id),
   FOREIGN KEY (template_id) REFERENCES app_routines__templates(id)
 );
