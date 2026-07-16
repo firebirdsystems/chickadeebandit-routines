@@ -1,7 +1,7 @@
 {
   "id": "routines",
   "name": "Routines",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Reusable household playbooks for mornings, bedtime, travel prep, weekly resets, and share-safe caregiver instructions.",
   "entrypoint": "index.html",
   "runtime": "static",
@@ -57,8 +57,12 @@
       "kind": "owner_or_visibility",
       "member_column": "owner_member_id",
       "visibility_column": "visibility",
-      "everyone_values": ["everyone"],
-      "adult_values": ["adults"]
+      "everyone_values": [
+        "everyone"
+      ],
+      "adult_values": [
+        "adults"
+      ]
     },
     "template_steps": {
       "kind": "inherit_visibility",
@@ -102,8 +106,15 @@
     "label": "Routines",
     "size": "small"
   },
+  "agenda": {
+    "kind": "routine",
+    "source": {
+      "kind": "sql",
+      "query": "SELECT id AS id, title_snapshot AS title, run_date AS when_at, target_member_id AS member_id FROM app_routines__runs WHERE run_date = :today AND status = 'active' ORDER BY started_at LIMIT 10"
+    }
+  },
   "resource_limits": {
     "max_db_bytes": 52428800
   },
-  "icon": "🧭"
+  "icon": "\ud83e\udded"
 }
