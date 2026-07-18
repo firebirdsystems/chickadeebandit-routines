@@ -5,10 +5,10 @@ export const STARTER_TEMPLATES = [
     description: "A calm checklist for getting out the door.",
     default_start_time: "07:00",
     steps: [
-      ["Get dressed", "Clothes, socks, shoes, and weather gear.", 0, "kid", true],
-      ["Eat breakfast", "Pack any leftovers or lunch items.", 20, "kid", true],
-      ["Brush teeth and hair", "Bathroom reset before leaving.", 35, "kid", true],
-      ["Backpack check", "Homework, water bottle, lunch, and activity gear.", 45, "parent", true]
+      ["Get dressed", "Clothes, socks, shoes, and weather gear.", 0, "kid", true, "👕"],
+      ["Eat breakfast", "Pack any leftovers or lunch items.", 20, "kid", true, "🥣"],
+      ["Brush teeth and hair", "Bathroom reset before leaving.", 35, "kid", true, "🪥"],
+      ["Backpack check", "Homework, water bottle, lunch, and activity gear.", 45, "parent", true, "🎒"]
     ]
   },
   {
@@ -17,10 +17,10 @@ export const STARTER_TEMPLATES = [
     description: "Evening wind-down steps.",
     default_start_time: "19:30",
     steps: [
-      ["Pajamas", "Change clothes and put laundry away.", 0, "kid", true],
-      ["Bathroom", "Brush teeth, wash face, use bathroom.", 10, "kid", true],
-      ["Tomorrow prep", "Choose clothes and pack backpack.", 20, "kid", false],
-      ["Read and lights out", "Books, water, final goodnight.", 30, "parent", true]
+      ["Pajamas", "Change clothes and put laundry away.", 0, "kid", true, "🌙"],
+      ["Bathroom", "Brush teeth, wash face, use bathroom.", 10, "kid", true, "🚿"],
+      ["Tomorrow prep", "Choose clothes and pack backpack.", 20, "kid", false, "👟"],
+      ["Read and lights out", "Books, water, final goodnight.", 30, "parent", true, "📚"]
     ]
   },
   {
@@ -29,10 +29,10 @@ export const STARTER_TEMPLATES = [
     description: "Quick household reset for the week ahead.",
     default_start_time: "16:00",
     steps: [
-      ["Clear shared spaces", "Kitchen counter, entryway, and living room.", 0, "everyone", true],
-      ["Review calendar", "Check events, rides, meals, and deadlines.", 20, "adult", true],
-      ["Plan meals", "Pick easy meals and add missing grocery items.", 35, "adult", false],
-      ["Laundry check", "Start what is needed for Monday.", 45, "everyone", false]
+      ["Clear shared spaces", "Kitchen counter, entryway, and living room.", 0, "everyone", true, "🧹"],
+      ["Review calendar", "Check events, rides, meals, and deadlines.", 20, "adult", true, "📅"],
+      ["Plan meals", "Pick easy meals and add missing grocery items.", 35, "adult", false, "🍽️"],
+      ["Laundry check", "Start what is needed for Monday.", 45, "everyone", false, "🧺"]
     ]
   },
   {
@@ -41,10 +41,10 @@ export const STARTER_TEMPLATES = [
     description: "Final pass before leaving home.",
     default_start_time: "08:00",
     steps: [
-      ["Documents and meds", "IDs, tickets, medications, chargers.", 0, "adult", true],
-      ["House check", "Trash, thermostat, doors, windows, lights.", 15, "adult", true],
-      ["Bags loaded", "Count bags and special items.", 25, "everyone", true],
-      ["Final bathroom and water", "Last stop before getting in the car.", 35, "everyone", false]
+      ["Documents and meds", "IDs, tickets, medications, chargers.", 0, "adult", true, "🛂"],
+      ["House check", "Trash, thermostat, doors, windows, lights.", 15, "adult", true, "🏠"],
+      ["Bags loaded", "Count bags and special items.", 25, "everyone", true, "🧳"],
+      ["Final bathroom and water", "Last stop before getting in the car.", 35, "everyone", false, "💧"]
     ]
   },
   {
@@ -53,10 +53,10 @@ export const STARTER_TEMPLATES = [
     description: "Share-safe evening instructions for a sitter.",
     default_start_time: "17:30",
     steps: [
-      ["Dinner", "Meal plan, allergy notes, and cleanup expectations.", 0, "caregiver", true],
-      ["Activities", "Approved games, screens, homework, or outdoor time.", 30, "caregiver", false],
-      ["Bedtime routine", "Bathroom, pajamas, books, lights out.", 90, "caregiver", true],
-      ["House close-up", "Doors locked, lights, pets, and parent update.", 150, "caregiver", true]
+      ["Dinner", "Meal plan, allergy notes, and cleanup expectations.", 0, "caregiver", true, "🍝"],
+      ["Activities", "Approved games, screens, homework, or outdoor time.", 30, "caregiver", false, "🎲"],
+      ["Bedtime routine", "Bathroom, pajamas, books, lights out.", 90, "caregiver", true, "🛏️"],
+      ["House close-up", "Doors locked, lights, pets, and parent update.", 150, "caregiver", true, "🔒"]
     ]
   },
   {
@@ -65,13 +65,35 @@ export const STARTER_TEMPLATES = [
     description: "Care steps for someone watching pets.",
     default_start_time: "18:00",
     steps: [
-      ["Food and water", "Amounts, location, and cleanup.", 0, "caregiver", true],
-      ["Walk or litter", "Route, leash, bags, litter, or yard notes.", 15, "caregiver", true],
-      ["Medication", "Only include exact instructions when needed.", 30, "caregiver", false],
-      ["Update owner", "Send photo or quick status note.", 45, "caregiver", false]
+      ["Food and water", "Amounts, location, and cleanup.", 0, "caregiver", true, "🐾"],
+      ["Walk or litter", "Route, leash, bags, litter, or yard notes.", 15, "caregiver", true, "🦮"],
+      ["Medication", "Only include exact instructions when needed.", 30, "caregiver", false, "💊"],
+      ["Update owner", "Send photo or quick status note.", 45, "caregiver", false, "📸"]
     ]
   }
 ];
+
+/**
+ * Emoji offered by the step editor's icon picker. Kept small and concrete on
+ * purpose: these are the pictures a pre-reader learns to recognise on the
+ * kiosk tile grid, so the list favours unambiguous objects (a toothbrush, a
+ * backpack) over abstractions. Any emoji typed by hand is still accepted.
+ */
+export const ROUTINE_ICONS = [
+  "👕", "👟", "🎒", "🪥", "🚿", "🛁", "🧴", "💧",
+  "🥣", "🍎", "🍽️", "🥪", "🍝", "☕", "💊", "🩺",
+  "🛏️", "🌙", "📚", "🎲", "🎨", "🎵", "📅", "⏰",
+  "🧹", "🧺", "🗑️", "🧽", "🏠", "🔒", "🐾", "🦮",
+  "🚗", "🧳", "🛂", "📸", "✅", "⭐", "❤️", "🌞"
+];
+
+/** One emoji (or empty). Guards the picker's free-text escape hatch so a
+ *  pasted paragraph can't become a tile label. */
+export function normalizeIcon(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  return [...text][0] ?? "";
+}
 
 export function todayStr(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;

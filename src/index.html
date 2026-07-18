@@ -67,8 +67,13 @@
     label { display: block; font-weight: 800; font-size: .78rem; color: var(--hub-text-muted, #4b5563); margin-bottom: 5px; }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
     .field { margin-bottom: 10px; }
-    .step-editor { display: grid; grid-template-columns: 1.5fr 2fr 90px 1fr 74px 42px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .step-editor { display: grid; grid-template-columns: 48px 1.4fr 1.8fr 84px 84px 1fr 74px 42px; gap: 8px; align-items: center; margin-bottom: 8px; }
     .step-editor input[type="checkbox"] { width: auto; }
+    .step-icon { font-size: 1.3rem; line-height: 1; padding: 6px 0; text-align: center; }
+    .step-emoji { font-size: 1.1rem; }
+    .icon-picker { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border: 1px solid var(--hub-border, #e5e7eb); border-radius: 8px; background: var(--hub-bg, #f9fafb); }
+    .icon-picker button { font-size: 1.2rem; padding: 4px 7px; line-height: 1; }
+    .icon-picker .icon-clear { font-size: .78rem; }
     .empty { padding: 24px; text-align: center; color: var(--hub-text-muted, #6b7280); border: 1px dashed var(--hub-border, #d1d5db); border-radius: 8px; background: var(--hub-surface, #fff); }
     .modal-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
     .modal { background: var(--hub-surface, #fff); border-radius: 10px; width: min(760px, 100%); max-height: 92vh; overflow: auto; padding: 18px; }
@@ -80,7 +85,8 @@
     .packet li { margin-bottom: 10px; }
     @media (max-width: 720px) {
       header { flex-direction: column; }
-      .step-editor { grid-template-columns: 1fr; }
+      .step-editor { grid-template-columns: 48px 1fr; }
+      .step-editor input, .step-editor select, .step-editor > label { grid-column: 2; }
       .row { align-items: flex-start; flex-direction: column; }
     }
     @media print {
@@ -96,7 +102,7 @@
 
   <script type="module">
     import { esc, initial, memberColor, isAdult, hubAlert, hubConfirm } from "/hub-sdk.js";
-    import { STARTER_TEMPLATES, todayStr, completionSummary, canCompleteStep, sortByOrder, visibleTemplates } from "./logic.js";
+    import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, todayStr, completionSummary, canCompleteStep, sortByOrder, visibleTemplates } from "./logic.js";
 
     const CONTEXT = window.__CONTEXT_URL ?? "";
     const DB = window.__DB_URL ?? "";
@@ -288,7 +294,7 @@
         <div class="step ${esc(step.status)}">
           <div class="row">
             <div>
-              <div class="step-title">${esc(step.title_snapshot)}</div>
+              <div class="step-title">${step.icon_snapshot ? `<span class="step-emoji">${esc(step.icon_snapshot)}</span> ` : ""}${esc(step.title_snapshot)}</div>
               ${step.details_snapshot ? `<p class="muted">${esc(step.details_snapshot)}</p>` : ""}
               <p class="muted">${step.required ? "Required" : "Optional"} · ${esc(memberName(step.assigned_member_id, step.role_label || "Anyone"))}</p>
             </div>
@@ -399,15 +405,38 @@
     }
 
     function stepEditor(step, i) {
+      const icon = normalizeIcon(step.icon ?? step.icon_snapshot ?? "");
+      // The icon is the label on the kiosk tile grid, where a pre-reader has
+      // nothing else to go on — so it gets a first-class picker, not a
+      // buried option.
       return `<div class="step-editor" data-step>
+        <button type="button" class="step-icon" data-icon-button title="Pick a picture" onclick="toggleIconPicker(this)">${esc(icon || "＋")}</button>
+        <input name="step_icon" type="hidden" value="${esc(icon)}">
         <input name="step_title" placeholder="Step title" value="${esc(step.title ?? step.title_snapshot ?? "")}">
         <input name="step_details" placeholder="Details" value="${esc(step.details ?? step.details_snapshot ?? "")}">
         <input name="step_offset" type="number" placeholder="Minutes" value="${esc(step.suggested_offset_minutes ?? 0)}">
+        <input name="step_timer" type="number" min="1" max="120" placeholder="Timer" value="${esc(step.timer_minutes ?? "")}" title="Optional countdown shown on the kiosk tile (minutes)">
         <select name="step_member"><option value="">Anyone</option>${members.map((m) => `<option value="${esc(m.id)}" ${m.id === step.assigned_member_id ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select>
         <label><input name="step_required" type="checkbox" ${Number(step.required ?? 1) === 1 ? "checked" : ""}> Req</label>
         <button type="button" onclick="this.closest('[data-step]').remove()">×</button>
+        <div class="icon-picker" hidden>
+          ${ROUTINE_ICONS.map((choice) => `<button type="button" onclick="pickIcon(this, '${choice}')">${choice}</button>`).join("")}
+          <button type="button" class="icon-clear" onclick="pickIcon(this, '')">Clear</button>
+        </div>
       </div>`;
     }
+
+    window.toggleIconPicker = (button) => {
+      const picker = button.closest("[data-step]").querySelector(".icon-picker");
+      picker.hidden = !picker.hidden;
+    };
+
+    window.pickIcon = (button, choice) => {
+      const row = button.closest("[data-step]");
+      row.querySelector('[name="step_icon"]').value = choice;
+      row.querySelector("[data-icon-button]").textContent = choice || "＋";
+      row.querySelector(".icon-picker").hidden = true;
+    };
 
     window.addStepEditor = () => document.getElementById("step-editors").insertAdjacentHTML("beforeend", stepEditor({}, Date.now()));
 
@@ -444,7 +473,9 @@
         template_id: id,
         title: el.querySelector('[name="step_title"]').value.trim() || "Untitled step",
         details: el.querySelector('[name="step_details"]').value,
+        icon: normalizeIcon(el.querySelector('[name="step_icon"]').value),
         suggested_offset_minutes: Number(el.querySelector('[name="step_offset"]').value || 0),
+        timer_minutes: Number(el.querySelector('[name="step_timer"]').value) || null,
         assigned_member_id: el.querySelector('[name="step_member"]').value || null,
         role_label: "",
         required: el.querySelector('[name="step_required"]').checked ? 1 : 0,
@@ -453,7 +484,7 @@
         updated_at: now
       }));
       for (const step of stepRows) {
-        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [step.id,step.template_id,step.title,step.details,step.suggested_offset_minutes,step.assigned_member_id,step.role_label,step.required,step.sort_order,currentMember().id,step.created_at,step.updated_at]);
+        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,icon,timer_minutes,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [step.id,step.template_id,step.title,step.details,step.icon,step.timer_minutes,step.suggested_offset_minutes,step.assigned_member_id,step.role_label,step.required,step.sort_order,currentMember().id,step.created_at,step.updated_at]);
       }
       templateSteps.push(...stepRows);
       closeModal();
@@ -473,8 +504,8 @@
       await db("INSERT INTO app_routines__templates (id,title,description,category,visibility,owner_member_id,target_member_id,default_start_time,default_duration_minutes,archived_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [id,starter.title,starter.description,starter.category,"everyone",currentMember().id,target,starter.default_start_time,45,null,now,now]);
       templates.unshift({ id, title: starter.title, description: starter.description, category: starter.category, visibility: "everyone", owner_member_id: currentMember().id, target_member_id: target, default_start_time: starter.default_start_time, default_duration_minutes: 45, archived_at: null, created_at: now, updated_at: now });
       for (const [sort_order, step] of starter.steps.entries()) {
-        const row = { id: crypto.randomUUID(), template_id: id, title: step[0], details: step[1], suggested_offset_minutes: step[2], assigned_member_id: step[3] === "kid" ? target : null, role_label: step[3], required: step[4] ? 1 : 0, sort_order, created_by_member_id: currentMember().id, created_at: now, updated_at: now };
-        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.template_id,row.title,row.details,row.suggested_offset_minutes,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.created_by_member_id,row.created_at,row.updated_at]);
+        const row = { id: crypto.randomUUID(), template_id: id, title: step[0], details: step[1], suggested_offset_minutes: step[2], assigned_member_id: step[3] === "kid" ? target : null, role_label: step[3], required: step[4] ? 1 : 0, icon: step[5] ?? "", timer_minutes: null, sort_order, created_by_member_id: currentMember().id, created_at: now, updated_at: now };
+        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,icon,timer_minutes,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.template_id,row.title,row.details,row.icon,row.timer_minutes,row.suggested_offset_minutes,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.created_by_member_id,row.created_at,row.updated_at]);
         templateSteps.push(row);
       }
     }
@@ -510,8 +541,8 @@
       runs.unshift(run);
       const steps = sortByOrder(templateSteps.filter((s) => s.template_id === template.id));
       for (const step of steps) {
-        const row = { id: crypto.randomUUID(), run_id: run.id, template_step_id: step.id, title_snapshot: step.title, details_snapshot: step.details, assigned_member_id: step.assigned_member_id || run.target_member_id, role_label: step.role_label, required: step.required, sort_order: step.sort_order, status: "pending", completed_by_member_id: null, completed_at: null };
-        await db("INSERT INTO app_routines__run_steps (id,run_id,template_step_id,title_snapshot,details_snapshot,assigned_member_id,role_label,required,sort_order,status,completed_by_member_id,completed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.run_id,row.template_step_id,row.title_snapshot,row.details_snapshot,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.status,row.completed_by_member_id,row.completed_at]);
+        const row = { id: crypto.randomUUID(), run_id: run.id, template_step_id: step.id, title_snapshot: step.title, details_snapshot: step.details, icon_snapshot: step.icon ?? "", timer_minutes: step.timer_minutes ?? null, assigned_member_id: step.assigned_member_id || run.target_member_id, role_label: step.role_label, required: step.required, sort_order: step.sort_order, status: "pending", completed_by_member_id: null, completed_at: null };
+        await db("INSERT INTO app_routines__run_steps (id,run_id,template_step_id,title_snapshot,details_snapshot,icon_snapshot,timer_minutes,assigned_member_id,role_label,required,sort_order,status,completed_by_member_id,completed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.run_id,row.template_step_id,row.title_snapshot,row.details_snapshot,row.icon_snapshot,row.timer_minutes,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.status,row.completed_by_member_id,row.completed_at]);
         runSteps.push(row);
       }
       publish("routine.started", run.id, { title: run.title_snapshot, run_date: run.run_date });

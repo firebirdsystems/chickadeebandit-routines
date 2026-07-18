@@ -1,7 +1,7 @@
 {
   "id": "routines",
   "name": "Routines",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Reusable household playbooks for mornings, bedtime, travel prep, weekly resets, and share-safe caregiver instructions.",
   "entrypoint": "index.html",
   "runtime": "static",
@@ -34,8 +34,10 @@
     "household_id",
     "target_member_id",
     "assigned_member_id",
+    "completed_by_member_id",
     "required",
     "sort_order",
+    "timer_minutes",
     "run_date",
     "status",
     "template_id",
@@ -101,6 +103,35 @@
   ],
   "nav": {
     "label": "Routines"
+  },
+  "kiosk": "allow",
+  "kiosk_checklist": {
+    "table": "run_steps",
+    "label": "Routines",
+    "title_column": "title_snapshot",
+    "icon_column": "icon_snapshot",
+    "sort_column": "sort_order",
+    "member_column": "assigned_member_id",
+    "timer_column": "timer_minutes",
+    "done_by_id_column": "completed_by_member_id",
+    "completed_at_column": "completed_at",
+    "status": {
+      "column": "status",
+      "done_value": "done",
+      "pending_value": "pending"
+    },
+    "parent": {
+      "table": "runs",
+      "fk_column": "run_id",
+      "title_column": "title_snapshot",
+      "filter": [
+        { "column": "status", "equals": "active" },
+        { "column": "run_date", "equals": ":today" }
+      ]
+    },
+    "display": "tiles",
+    "authorization": "avatar",
+    "audit": "member"
   },
   "widget": {
     "label": "Routines",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STARTER_TEMPLATES, canCompleteStep, completionSummary, sortByOrder, visibleTemplates } from "../src/logic.js";
+import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, canCompleteStep, completionSummary, sortByOrder, visibleTemplates } from "../src/logic.js";
 
 describe("routines logic", () => {
   it("ships the planned starter templates", () => {
@@ -37,6 +37,32 @@ describe("routines logic", () => {
     // the server rejects a non-adult write — don't offer a Done button.
     expect(canCompleteStep({ assigned_member_id: null }, child)).toBe(false);
     expect(canCompleteStep({ assigned_member_id: "kid-2" }, child)).toBe(false);
+  });
+
+  it("gives every starter step a picture for the kiosk tile grid", () => {
+    // On the kiosk a pre-reader navigates by emoji alone, so a starter step
+    // with no icon would be a blank tile.
+    for (const template of STARTER_TEMPLATES) {
+      for (const step of template.steps) {
+        expect(step[5], `${template.title} / ${step[0]}`).toBeTruthy();
+      }
+    }
+  });
+
+  it("offers a picker palette with no duplicates", () => {
+    expect(ROUTINE_ICONS.length).toBeGreaterThan(20);
+    expect(new Set(ROUTINE_ICONS).size).toBe(ROUTINE_ICONS.length);
+  });
+
+  it("normalizes an icon down to a single character", () => {
+    expect(normalizeIcon("🪥")).toBe("🪥");
+    expect(normalizeIcon("  🎒  ")).toBe("🎒");
+    // The picker has a free-text escape hatch; a pasted paragraph must not
+    // become a tile label.
+    expect(normalizeIcon("brush your teeth")).toBe("b");
+    expect(normalizeIcon("")).toBe("");
+    expect(normalizeIcon(null)).toBe("");
+    expect(normalizeIcon(undefined)).toBe("");
   });
 
   it("sorts steps and hides archived templates", () => {
