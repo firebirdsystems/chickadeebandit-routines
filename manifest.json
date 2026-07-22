@@ -1,5 +1,6 @@
 {
   "id": "routines",
+  "contexts": ["household", "shared_space"],
   "name": "Routines",
   "version": "1.2.0",
   "description": "Reusable household playbooks for mornings, bedtime, travel prep, weekly resets, and share-safe caregiver instructions.",
