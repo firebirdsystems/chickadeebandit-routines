@@ -131,3 +131,12 @@ export function sortByOrder(rows) {
 export function visibleTemplates(templates) {
   return templates.filter((template) => !template.archived_at);
 }
+
+/**
+ * Fields the in-app search matches against (see hub-sdk `searchMatch`).
+ * Description and category count as well as the title — routines are
+ * browsed as "the morning ones" once a household has a dozen.
+ */
+export function searchableFields(item) {
+  return [item.title, item.description, item.category];
+}

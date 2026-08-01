@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, canCompleteStep, completionSummary, sortByOrder, visibleTemplates } from "../src/logic.js";
+import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, canCompleteStep, completionSummary, sortByOrder, visibleTemplates, searchableFields } from "../src/logic.js";
 
 describe("routines logic", () => {
   it("ships the planned starter templates", () => {
@@ -68,5 +68,13 @@ describe("routines logic", () => {
   it("sorts steps and hides archived templates", () => {
     expect(sortByOrder([{ sort_order: 2 }, { sort_order: 0 }]).map((x) => x.sort_order)).toEqual([0, 2]);
     expect(visibleTemplates([{ id: "a" }, { id: "b", archived_at: "now" }]).map((x) => x.id)).toEqual(["a"]);
+  });
+});
+
+describe("searchableFields", () => {
+  it("matches on description and category, not just the routine title", () => {
+    const fields = searchableFields({ title: "Out the door", description: "shoes, bag, water bottle", category: "morning" });
+    expect(fields).toContain("shoes, bag, water bottle");
+    expect(fields).toContain("morning");
   });
 });
