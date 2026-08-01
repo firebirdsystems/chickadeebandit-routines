@@ -46,5 +46,15 @@ const SCENARIOS_FILE = path.join(ROOT, "scenarios.json");
 if (fs.existsSync(SCENARIOS_FILE)) {
   scenarios = JSON.parse(fs.readFileSync(SCENARIOS_FILE, "utf8"));
 }
-fs.writeFileSync(path.join(DIST, "bundle.json"), JSON.stringify({ manifest, migrations, files, ...(scenarios ? { scenarios } : {}) }, null, 2), "utf8");
+
+// ── Read ui-scenarios.json (optional per-app browser specs) ───────────────────
+// Layer 3b: Playwright drives the app's own UI inside the real hub. Shipped in
+// the bundle so the hub can collect scenarios from a published bundle, not just
+// from a local app dir (see hub DESIGN-app-ui-scenarios.md).
+let uiScenarios;
+const UI_SCENARIOS_FILE = path.join(ROOT, "ui-scenarios.json");
+if (fs.existsSync(UI_SCENARIOS_FILE)) {
+  uiScenarios = JSON.parse(fs.readFileSync(UI_SCENARIOS_FILE, "utf8"));
+}
+fs.writeFileSync(path.join(DIST, "bundle.json"), JSON.stringify({ manifest, migrations, files, ...(scenarios ? { scenarios } : {}), ...(uiScenarios ? { ui_scenarios: uiScenarios } : {}) }, null, 2), "utf8");
 console.log(`Built ${Object.keys(files).length} file(s) -> dist/bundle.json`);
