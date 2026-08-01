@@ -55,6 +55,62 @@
     "canceled_at",
     "archived_at"
   ],
+    "member_references": {
+      "templates": [
+        {
+          "column": "owner_member_id",
+          "on_removed": "keep"
+        },
+        {
+          "column": "target_member_id",
+          "on_removed": "null"
+        }
+      ],
+      "template_steps": [
+        {
+          "column": "assigned_member_id",
+          "on_removed": "null"
+        },
+        {
+          "column": "created_by_member_id",
+          "on_removed": "keep"
+        }
+      ],
+      "template_audience": [
+        {
+          "column": "member_id",
+          "on_removed": "delete"
+        },
+        {
+          "column": "created_by_member_id",
+          "on_removed": "keep"
+        }
+      ],
+      "runs": [
+        {
+          "column": "started_by_member_id",
+          "on_removed": "keep"
+        },
+        {
+          "column": "target_member_id",
+          "on_removed": "null"
+        }
+      ],
+      "run_steps": [
+        {
+          "column": "assigned_member_id",
+          "on_removed": "null"
+        },
+        {
+          "column": "completed_by_member_id",
+          "on_removed": "keep"
+        }
+      ],
+      "caregiver_packets": {
+        "column": "created_by_member_id",
+        "on_removed": "keep"
+      }
+    },
   "row_policies": {
     "templates": {
       "kind": "owner_or_visibility",
@@ -80,7 +136,15 @@
       "writer_column": "created_by_member_id"
     },
     "runs": {
-      "kind": "adult_writable"
+      "kind": "adult_writable",
+      "retain_days": {
+        "default": 365,
+        "timestamp_column": "started_at",
+        "override_key": "run_history",
+        "dependent_tables": [
+          { "table": "run_steps", "foreign_key": "run_id" }
+        ]
+      }
     },
     "run_steps": {
       "kind": "owner_only",

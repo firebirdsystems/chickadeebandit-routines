@@ -149,6 +149,33 @@
       return json;
     }
 
+    // Atomic multi-statement form of /api/db. Rebuilding a template's steps is a
+    // delete plus one insert per step: issued one at a time, a failure partway
+    // through left the routine with no steps at all (or half of them), which the
+    // UI has no way to repair. D1 runs a batch transactionally, so it lands whole
+    // or not at all. /api/db caps a batch at 25 statements, so long step lists are
+    // chunked and lose atomicity only at that boundary.
+    const MAX_BATCH = 25;
+
+    async function dbBatch(statements) {
+      if (!statements.length) return [];
+      if (!DB) return statements.map((s) => demoDb(s.sql));
+      const res = await fetch(DB, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statements })
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || "Database request failed");
+      return json.results ?? [];
+    }
+
+    async function dbBatchAll(statements) {
+      for (let i = 0; i < statements.length; i += MAX_BATCH) {
+        await dbBatch(statements.slice(i, i + MAX_BATCH));
+      }
+    }
+
     async function publish(type, subject_id, payload = {}) {
       const url = EVENTS_URL || `/run/${APP_ID}/api/events`;
       await fetch(url, {
@@ -459,14 +486,27 @@
         created_at: templates.find((t) => t.id === id)?.created_at ?? now,
         updated_at: now
       };
+      const statements = [];
+      const doomedStepIds = templateId ? templateSteps.filter((s) => s.template_id === id).map((s) => s.id) : [];
       if (templateId) {
-        await db("UPDATE app_routines__templates SET title=?, description=?, category=?, visibility=?, target_member_id=?, default_start_time=?, default_duration_minutes=?, updated_at=? WHERE id=?", [row.title, row.description, row.category, row.visibility, row.target_member_id, row.default_start_time, row.default_duration_minutes, row.updated_at, id]);
-        templates = templates.map((t) => t.id === id ? { ...t, ...row } : t);
-        await db("DELETE FROM app_routines__template_steps WHERE template_id=?", [id]);
-        templateSteps = templateSteps.filter((s) => s.template_id !== id);
+        statements.push({ sql: "UPDATE app_routines__templates SET title=?, description=?, category=?, visibility=?, target_member_id=?, default_start_time=?, default_duration_minutes=?, updated_at=? WHERE id=?", params: [row.title, row.description, row.category, row.visibility, row.target_member_id, row.default_start_time, row.default_duration_minutes, row.updated_at, id] });
+        // Recorded runs reference the step rows they were started from
+        // (run_steps.template_step_id → template_steps.id, no ON DELETE action),
+        // so with foreign keys enforced the wholesale delete below failed on any
+        // template that had ever been run — after the UPDATE had committed.
+        // Release the references first: every run step carries its own
+        // title/details/icon snapshots, so a null link loses nothing, which is
+        // exactly why the column is nullable. Ids come from state rather than a
+        // subquery because app SQL may not reference a governed table inside one.
+        if (doomedStepIds.length) {
+          statements.push({
+            sql: `UPDATE app_routines__run_steps SET template_step_id = NULL WHERE template_step_id IN (${doomedStepIds.map(() => "?").join(",")})`,
+            params: doomedStepIds
+          });
+        }
+        statements.push({ sql: "DELETE FROM app_routines__template_steps WHERE template_id=?", params: [id] });
       } else {
-        await db("INSERT INTO app_routines__templates (id,title,description,category,visibility,owner_member_id,target_member_id,default_start_time,default_duration_minutes,archived_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.title,row.description,row.category,row.visibility,row.owner_member_id,row.target_member_id,row.default_start_time,row.default_duration_minutes,row.archived_at,row.created_at,row.updated_at]);
-        templates.unshift(row);
+        statements.push({ sql: "INSERT INTO app_routines__templates (id,title,description,category,visibility,owner_member_id,target_member_id,default_start_time,default_duration_minutes,archived_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", params: [row.id,row.title,row.description,row.category,row.visibility,row.owner_member_id,row.target_member_id,row.default_start_time,row.default_duration_minutes,row.archived_at,row.created_at,row.updated_at] });
       }
       const stepRows = [...document.querySelectorAll("[data-step]")].map((el, sort_order) => ({
         id: crypto.randomUUID(),
@@ -484,7 +524,19 @@
         updated_at: now
       }));
       for (const step of stepRows) {
-        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,icon,timer_minutes,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [step.id,step.template_id,step.title,step.details,step.icon,step.timer_minutes,step.suggested_offset_minutes,step.assigned_member_id,step.role_label,step.required,step.sort_order,currentMember().id,step.created_at,step.updated_at]);
+        statements.push({ sql: "INSERT INTO app_routines__template_steps (id,template_id,title,details,icon,timer_minutes,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", params: [step.id,step.template_id,step.title,step.details,step.icon,step.timer_minutes,step.suggested_offset_minutes,step.assigned_member_id,step.role_label,step.required,step.sort_order,currentMember().id,step.created_at,step.updated_at] });
+      }
+      // The template row, the step rebuild, and every step insert land as one
+      // transaction (chunked only past the 25-statement cap). Issued one at a
+      // time, a failure after the delete left the routine with no steps.
+      await dbBatchAll(statements);
+      if (templateId) {
+        templates = templates.map((t) => t.id === id ? { ...t, ...row } : t);
+        templateSteps = templateSteps.filter((s) => s.template_id !== id);
+        const doomed = new Set(doomedStepIds);
+        runSteps = runSteps.map((s) => doomed.has(s.template_step_id) ? { ...s, template_step_id: null } : s);
+      } else {
+        templates.unshift(row);
       }
       templateSteps.push(...stepRows);
       closeModal();
@@ -501,13 +553,17 @@
       const now = new Date().toISOString();
       const id = crypto.randomUUID();
       const target = starter.category === "kids" ? members.find((m) => m.role === "child")?.id ?? null : null;
-      await db("INSERT INTO app_routines__templates (id,title,description,category,visibility,owner_member_id,target_member_id,default_start_time,default_duration_minutes,archived_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [id,starter.title,starter.description,starter.category,"everyone",currentMember().id,target,starter.default_start_time,45,null,now,now]);
-      templates.unshift({ id, title: starter.title, description: starter.description, category: starter.category, visibility: "everyone", owner_member_id: currentMember().id, target_member_id: target, default_start_time: starter.default_start_time, default_duration_minutes: 45, archived_at: null, created_at: now, updated_at: now });
-      for (const [sort_order, step] of starter.steps.entries()) {
-        const row = { id: crypto.randomUUID(), template_id: id, title: step[0], details: step[1], suggested_offset_minutes: step[2], assigned_member_id: step[3] === "kid" ? target : null, role_label: step[3], required: step[4] ? 1 : 0, icon: step[5] ?? "", timer_minutes: null, sort_order, created_by_member_id: currentMember().id, created_at: now, updated_at: now };
-        await db("INSERT INTO app_routines__template_steps (id,template_id,title,details,icon,timer_minutes,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [row.id,row.template_id,row.title,row.details,row.icon,row.timer_minutes,row.suggested_offset_minutes,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.created_by_member_id,row.created_at,row.updated_at]);
-        templateSteps.push(row);
+      const statements = [{ sql: "INSERT INTO app_routines__templates (id,title,description,category,visibility,owner_member_id,target_member_id,default_start_time,default_duration_minutes,archived_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", params: [id,starter.title,starter.description,starter.category,"everyone",currentMember().id,target,starter.default_start_time,45,null,now,now] }];
+      const stepRows = starter.steps.map((step, sort_order) => ({ id: crypto.randomUUID(), template_id: id, title: step[0], details: step[1], suggested_offset_minutes: step[2], assigned_member_id: step[3] === "kid" ? target : null, role_label: step[3], required: step[4] ? 1 : 0, icon: step[5] ?? "", timer_minutes: null, sort_order, created_by_member_id: currentMember().id, created_at: now, updated_at: now }));
+      for (const row of stepRows) {
+        statements.push({ sql: "INSERT INTO app_routines__template_steps (id,template_id,title,details,icon,timer_minutes,suggested_offset_minutes,assigned_member_id,role_label,required,sort_order,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", params: [row.id,row.template_id,row.title,row.details,row.icon,row.timer_minutes,row.suggested_offset_minutes,row.assigned_member_id,row.role_label,row.required,row.sort_order,row.created_by_member_id,row.created_at,row.updated_at] });
       }
+      // A starter arrives whole or not at all: one statement at a time left a
+      // half-built routine that looks installed, and installStarterTemplates
+      // then skips it on the next attempt (it dedupes on the title).
+      await dbBatchAll(statements);
+      templates.unshift({ id, title: starter.title, description: starter.description, category: starter.category, visibility: "everyone", owner_member_id: currentMember().id, target_member_id: target, default_start_time: starter.default_start_time, default_duration_minutes: 45, archived_at: null, created_at: now, updated_at: now });
+      templateSteps.push(...stepRows);
     }
 
     window.openRunModal = (templateId = "") => {
