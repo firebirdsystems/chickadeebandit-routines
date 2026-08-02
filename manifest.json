@@ -209,6 +209,18 @@
       "query": "SELECT id AS id, title_snapshot AS title, run_date AS when_at, target_member_id AS member_id FROM app_routines__runs WHERE run_date = :today AND status = 'active' ORDER BY started_at LIMIT 10"
     }
   },
+  "glance": {
+    "source": {
+      "kind": "sql",
+      "query": "SELECT COUNT(*) AS n FROM app_routines__runs WHERE run_date = :today AND status = 'active' LIMIT 1"
+    },
+    "display": {
+      "template": "badge",
+      "count": "n",
+      "label": "routines in progress",
+      "severity": "info"
+    }
+  },
   "resource_limits": {
     "max_db_bytes": 52428800
   },
