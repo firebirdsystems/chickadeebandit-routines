@@ -28,6 +28,14 @@
     "requires_approval": false
   },
   "storage": "db",
+  "preload": {
+    "templates": {"sql": "SELECT * FROM app_routines__templates ORDER BY created_at DESC"},
+    "template_steps": {"sql": "SELECT * FROM app_routines__template_steps ORDER BY sort_order ASC"},
+    "runs": {"sql": "SELECT * FROM app_routines__runs ORDER BY started_at DESC"},
+    "run_steps": {"sql": "SELECT * FROM app_routines__run_steps ORDER BY sort_order ASC"},
+    "caregiver_packets": {"sql": "SELECT * FROM app_routines__caregiver_packets ORDER BY created_at DESC"},
+    "caregiver_packet_steps": {"sql": "SELECT * FROM app_routines__caregiver_packet_steps ORDER BY sort_order ASC"}
+  },
   "db_encryption": "default",
   "db_plaintext_columns": [
     "category",
