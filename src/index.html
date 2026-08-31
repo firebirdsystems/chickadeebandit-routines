@@ -134,6 +134,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     let packetSteps = [];
     let tab = "today";
     let modalEl = null;
+    let bootError = "";
 
     const demoAdult = { id: "demo-adult", name: "Morgan", role: "adult" };
     const demoChild = { id: "demo-child", name: "Avery", role: "child" };
@@ -206,13 +207,20 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
 
     async function loadData() {
       if (!DB) seedDemo();
+      // caregiver_packets and caregiver_packet_steps are `adult_only`: the hub
+      // refuses the SELECT itself for a non-adult, not just the write. Fetching
+      // them unconditionally threw before the first render, so a child opening
+      // this app (its audience is `everyone`) got a blank frame and never
+      // reached the "adult-only" notice renderPackets() draws for them. Skip
+      // the read the way nest-egg does, and leave the arrays empty.
+      const adult = userIsAdult();
       const [t, ts, r, rs, p, ps] = await Promise.all([
         db("SELECT * FROM app_routines__templates ORDER BY created_at DESC"),
         db("SELECT * FROM app_routines__template_steps ORDER BY sort_order ASC"),
         db("SELECT * FROM app_routines__runs ORDER BY started_at DESC"),
         db("SELECT * FROM app_routines__run_steps ORDER BY sort_order ASC"),
-        db("SELECT * FROM app_routines__caregiver_packets ORDER BY created_at DESC"),
-        db("SELECT * FROM app_routines__caregiver_packet_steps ORDER BY sort_order ASC")
+        adult ? db("SELECT * FROM app_routines__caregiver_packets ORDER BY created_at DESC") : { rows: [] },
+        adult ? db("SELECT * FROM app_routines__caregiver_packet_steps ORDER BY sort_order ASC") : { rows: [] }
       ]);
       templates = t.rows ?? [];
       templateSteps = ts.rows ?? [];
@@ -287,12 +295,13 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
             <p class="muted">Reusable playbooks for household flow and share-safe caregiver instructions.</p>
           </div>
           <div class="toolbar">
-            ${userIsAdult() ? `<button class="primary" onclick="openTemplateModal()">New Template</button><button onclick="openRunModal()">Start Routine</button>` : ""}
+            ${userIsAdult() ? `<button class="primary" onclick="openTemplateModal()" data-testid="new-template">New Template</button><button onclick="openRunModal()" data-testid="start-routine">Start Routine</button>` : ""}
           </div>
         </header>
         <nav class="tabs">
-          ${["today", "templates", "packets", "history"].map((key) => `<button class="tab ${tab === key ? "active" : ""}" onclick="setTab('${key}')">${key[0].toUpperCase() + key.slice(1)}</button>`).join("")}
+          ${["today", "templates", "packets", "history"].map((key) => `<button class="tab ${tab === key ? "active" : ""}" onclick="setTab('${key}')" data-testid="tab-${key}">${key[0].toUpperCase() + key.slice(1)}</button>`).join("")}
         </nav>
+        ${bootError ? `<div class="empty">${esc(bootError)}</div>` : ""}
         ${tab === "today" ? renderToday() : ""}
         ${tab === "templates" ? renderTemplates() : ""}
         ${tab === "packets" ? renderPackets() : ""}
@@ -369,7 +378,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     function renderTemplateCard(template) {
       const steps = sortByOrder(templateSteps.filter((s) => s.template_id === template.id));
       return `
-        <section class="card">
+        <section class="card" data-testid="template-card" data-template-id="${esc(template.id)}">
           <div class="row">
             <div>
               <h2>${esc(template.title)}</h2>
@@ -379,15 +388,15 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
           </div>
           <p class="muted">${esc(template.category)} · ${steps.length} steps · ${esc(memberName(template.target_member_id, "Everyone"))}</p>
           <div class="steps">${steps.map((s) => `<div class="step"><div class="step-title">${esc(s.title)}</div><p class="muted">${esc(s.details || "")}</p></div>`).join("")}</div>
-          ${userIsAdult() ? `<div class="toolbar"><button onclick="openRunModal('${sid(template.id)}')">Start</button><button onclick="openTemplateModal('${sid(template.id)}')">Edit</button><button onclick="openPacketModal('${sid(template.id)}')">Packet</button><button class="danger" onclick="archiveTemplate('${sid(template.id)}')">Archive</button></div>` : ""}
+          ${userIsAdult() ? `<div class="toolbar" data-testid="template-actions" data-template-id="${esc(template.id)}"><button onclick="openRunModal('${sid(template.id)}')" data-testid="template-start">Start</button><button onclick="openTemplateModal('${sid(template.id)}')" data-testid="template-edit">Edit</button><button onclick="openPacketModal('${sid(template.id)}')" data-testid="template-packet">Packet</button><button class="danger" onclick="archiveTemplate('${sid(template.id)}')" data-testid="template-archive">Archive</button></div>` : ""}
         </section>
       `;
     }
 
     function renderPackets() {
-      if (!userIsAdult()) return `<div class="empty">Caregiver packets are adult-only.</div>`;
+      if (!userIsAdult()) return `<div class="empty" data-testid="packets-locked">Caregiver packets are adult-only.</div>`;
       return `
-        <div class="toolbar"><button class="primary" onclick="openPacketModal()">New Packet</button></div>
+        <div class="toolbar"><button class="primary" onclick="openPacketModal()" data-testid="new-packet">New Packet</button></div>
         ${packets.length ? `<div class="stack">${packets.map(renderPacketCard).join("")}</div>` : `<div class="empty">Create a printable packet with only the instructions a caregiver should see.</div>`}
       `;
     }
@@ -734,8 +743,15 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       `);
     };
 
-    await loadMembers();
-    await loadData();
+    try {
+      await loadMembers();
+      await loadData();
+    } catch (err) {
+      // A failed load must not leave the frame empty: render what did arrive
+      // and say why the rest is missing. This IIFE had no catch, so one
+      // rejected query took the whole app down before its first paint.
+      bootError = err?.message || "Something went wrong loading this app.";
+    }
     render();
   </script>
 </body>

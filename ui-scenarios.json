@@ -1,0 +1,37 @@
+{
+  "scenarios": [
+    {
+      "name": "a child reads the household templates but is offered no template or packet controls",
+      "members": { "parent": "adult", "kid": "child" },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__templates (id, title, category, visibility, owner_member_id, created_at, updated_at) VALUES ('ui-t1', ?, 'household', 'everyone', ?, datetime('now'), datetime('now'))",
+          "params": ["Morning launch", "{{parent}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, sort_order, required, created_at, updated_at) VALUES ('ui-s1', 'ui-t1', ?, 1, 1, datetime('now'), datetime('now'))",
+          "params": ["Pack the bag"]
+        },
+
+        { "action": "open", "as": "kid" },
+        { "action": "expectVisible", "as": "kid", "selector": "[data-testid=\"tab-templates\"]" },
+        { "action": "click", "as": "kid", "selector": "[data-testid=\"tab-templates\"]" },
+        { "action": "expectVisible", "as": "kid", "selector": "[data-testid=\"template-card\"][data-template-id=\"ui-t1\"]" },
+        { "action": "expectCount", "as": "kid", "selector": "[data-testid=\"template-actions\"]", "count": 0 },
+        { "action": "expectCount", "as": "kid", "selector": "[data-testid=\"new-template\"]", "count": 0 },
+        { "action": "click", "as": "kid", "selector": "[data-testid=\"tab-packets\"]" },
+        { "action": "expectVisible", "as": "kid", "selector": "[data-testid=\"packets-locked\"]" },
+
+        { "action": "open", "as": "parent" },
+        { "action": "expectVisible", "as": "parent", "selector": "[data-testid=\"new-template\"]" },
+        { "action": "click", "as": "parent", "selector": "[data-testid=\"tab-templates\"]" },
+        { "action": "expectVisible", "as": "parent", "selector": "[data-testid=\"template-card\"][data-template-id=\"ui-t1\"]" },
+        { "action": "expectVisible", "as": "parent", "selector": "[data-testid=\"template-actions\"][data-template-id=\"ui-t1\"]" },
+        { "action": "click", "as": "parent", "selector": "[data-testid=\"tab-packets\"]" },
+        { "action": "expectVisible", "as": "parent", "selector": "[data-testid=\"new-packet\"]" }
+      ]
+    }
+  ]
+}
