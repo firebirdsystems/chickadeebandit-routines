@@ -108,8 +108,8 @@
   <div id="app" class="app"><p class="muted">Loading routines...</p></div>
 
   <script type="module">
-    import { esc, initial, memberColor, isAdult, hubAlert, hubConfirm, searchMatch } from "/hub-sdk.js";
-    import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, todayStr, completionSummary, canCompleteStep, sortByOrder, visibleTemplates, searchableFields } from "./logic.js";
+    import { esc, initial, memberColor, isAdult, hubAlert, hubConfirm, searchMatch, hubToday } from "/hub-sdk.js";
+    import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, completionSummary, canCompleteStep, sortByOrder, visibleTemplates, searchableFields } from "./logic.js";
 
     const CONTEXT = window.__CONTEXT_URL ?? "";
     const DB = window.__DB_URL ?? "";
@@ -217,8 +217,20 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       const [t, ts, r, rs, p, ps] = await Promise.all([
         db("SELECT * FROM app_routines__templates ORDER BY created_at DESC"),
         db("SELECT * FROM app_routines__template_steps ORDER BY sort_order ASC"),
-        db("SELECT * FROM app_routines__runs ORDER BY started_at DESC"),
-        db("SELECT * FROM app_routines__run_steps ORDER BY sort_order ASC"),
+        // Only the ACTIVE runs, for the same reason as their steps below: Today
+        // is the landing tab and shows nothing else, while History is a tab the
+        // user has to ask for. loadHistoryRuns() fetches the rest on that first
+        // open. A run that is completed or canceled in this session stays in the
+        // array and shows up in History without a refetch.
+        db("SELECT * FROM app_routines__runs WHERE status = 'active' ORDER BY started_at DESC"),
+        // Only the ACTIVE runs' steps. This table is the app's fastest grower —
+        // a run per routine per day, several steps each, retained a year — and
+        // the Today tab shows active runs only. History needs the rest, so it
+        // fetches them once when that tab is first opened (loadHistorySteps)
+        // rather than making every launch pay for a year of them. A JOIN, not
+        // IN (SELECT …): the rewriter fails closed on a governed table named
+        // only inside a subquery, and this shape stays legal in roster mode.
+        db("SELECT s.* FROM app_routines__run_steps s JOIN app_routines__runs r ON r.id = s.run_id AND r.status = 'active' ORDER BY s.sort_order ASC"),
         adult ? db("SELECT * FROM app_routines__caregiver_packets ORDER BY created_at DESC") : { rows: [] },
         adult ? db("SELECT * FROM app_routines__caregiver_packet_steps ORDER BY sort_order ASC") : { rows: [] }
       ]);
@@ -270,8 +282,10 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     function demoDb(sql) {
       if (sql.includes("app_routines__templates")) return { rows: templates };
       if (sql.includes("app_routines__template_steps")) return { rows: templateSteps };
-      if (sql.includes("app_routines__runs")) return { rows: runs };
+      // run_steps first: its preload JOINs app_routines__runs, so a `runs`
+      // check ahead of it would answer the steps read with the runs array.
       if (sql.includes("app_routines__run_steps")) return { rows: runSteps };
+      if (sql.includes("app_routines__runs")) return { rows: runs };
       if (sql.includes("app_routines__caregiver_packets")) return { rows: packets };
       if (sql.includes("app_routines__caregiver_packet_steps")) return { rows: packetSteps };
       return { rows: [] };
@@ -424,7 +438,43 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
 
     window.closeModal = () => closeModal();
     function closeModal() { modalEl?.remove(); modalEl = null; }
-    window.setTab = (next) => { tab = next; render(); };
+    // History renders every past run and a per-run step summary, but the
+    // preload carries only the active runs and their steps. Fetch the remainder
+    // once, the first time History is opened. The promise itself is the guard,
+    // so a double tap cannot start two reads; a failure clears it so the next
+    // attempt retries. Both merges dedup by id: a run completed in this session
+    // is already in the array, and so are the active runs' steps.
+    let historyStepsPromise = null;
+    function loadHistorySteps() {
+      if (!DB) return Promise.resolve();
+      historyStepsPromise ??= db("SELECT * FROM app_routines__run_steps ORDER BY sort_order ASC")
+        .then((res) => {
+          const seen = new Set(runSteps.map((s) => s.id));
+          runSteps = [...runSteps, ...(res.rows ?? []).filter((s) => !seen.has(s.id))];
+        })
+        .catch((e) => { historyStepsPromise = null; throw e; });
+      return historyStepsPromise;
+    }
+
+    let historyRunsPromise = null;
+    function loadHistoryRuns() {
+      if (!DB) return Promise.resolve();
+      historyRunsPromise ??= db("SELECT * FROM app_routines__runs WHERE status != 'active' ORDER BY started_at DESC")
+        .then((res) => {
+          const seen = new Set(runs.map((r) => r.id));
+          runs = [...runs, ...(res.rows ?? []).filter((r) => !seen.has(r.id))];
+        })
+        .catch((e) => { historyRunsPromise = null; throw e; });
+      return historyRunsPromise;
+    }
+
+    window.setTab = (next) => {
+      tab = next;
+      render();
+      if (next === "history") {
+        Promise.all([loadHistoryRuns(), loadHistorySteps()]).then(render).catch(() => {});
+      }
+    };
 
     window.openTemplateModal = (templateId = "") => {
       const template = templates.find((t) => t.id === templateId) ?? {
@@ -608,7 +658,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         <form id="run-form">
           ${selectField("Template", "template_id", chosen, options.map((t) => [t.id, t.title]))}
           <div class="form-grid">
-            ${field("Date", "run_date", todayStr(), "date")}
+            ${field("Date", "run_date", hubToday(), "date")}
             ${memberSelect("For", "target_member_id", templates.find((t) => t.id === chosen)?.target_member_id ?? "")}
           </div>
           ${field("Caregiver label", "caregiver_label", "")}

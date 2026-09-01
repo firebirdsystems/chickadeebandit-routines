@@ -95,6 +95,14 @@ export function normalizeIcon(value) {
   return [...text][0] ?? "";
 }
 
+/**
+ * DEVICE-local, not household-local. The UI no longer calls this — every date
+ * that is STORED or COMPARED goes through the SDK's hubToday(), which names the
+ * HOUSEHOLD's calendar day and so agrees with the hub's own surfaces (glance,
+ * kiosk, cron, `:today` in declared SQL). Kept because it is pure and tested,
+ * and still fine for presentation. Do not reach for it to build a date you are
+ * about to write or compare against a stored one.
+ */
 export function todayStr(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
