@@ -37,6 +37,9 @@ describe("routines logic", () => {
     // the server rejects a non-adult write — don't offer a Done button.
     expect(canCompleteStep({ assigned_member_id: null }, child)).toBe(false);
     expect(canCompleteStep({ assigned_member_id: "kid-2" }, child)).toBe(false);
+    // Supervision is passed in, never inferred from the role (see isRunSupervisor).
+    expect(canCompleteStep({ assigned_member_id: "kid-2" }, { id: "a1", role: "adult" })).toBe(false);
+    expect(canCompleteStep({ assigned_member_id: "kid-2" }, { id: "a1", role: "adult" }, true)).toBe(true);
   });
 
   it("gives every starter step a picture for the kiosk tile grid", () => {

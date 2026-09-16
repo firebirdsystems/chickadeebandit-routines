@@ -1,0 +1,44 @@
+{
+  "scenarios": [
+    {
+      "name": "an adult who did not create a template can save it without duplicating its steps",
+      "members": { "author": "adult", "partner": "adult", "kid": "child" },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__templates (id, title, category, visibility, owner_member_id, created_at, updated_at) VALUES ('t-1', 'Bedtime', 'kids', 'everyone', ?, '2026-09-01T09:00:00Z', '2026-09-01T09:00:00Z')",
+          "params": ["{{author}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, sort_order, required, created_by_member_id, created_at, updated_at) VALUES ('s-1', 't-1', 'Bath', 0, 1, ?, '2026-09-01T09:00:00Z', '2026-09-01T09:00:00Z')",
+          "params": ["{{author}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, sort_order, required, created_by_member_id, created_at, updated_at) VALUES ('s-2', 't-1', 'Teeth', 1, 1, ?, '2026-09-01T09:00:00Z', '2026-09-01T09:00:00Z')",
+          "params": ["{{author}}"]
+        },
+
+        { "action": "db", "as": "kid", "sql": "DELETE FROM app_routines__template_steps WHERE template_id = 't-1'", "expect": { "status": 200 } },
+        { "action": "db", "as": "author", "sql": "SELECT id FROM app_routines__template_steps WHERE template_id = 't-1'", "expect": { "status": 200, "rowCount": 2 } },
+
+        { "action": "db", "as": "partner", "sql": "UPDATE app_routines__templates SET title = 'Bedtime (school nights)', updated_at = '2026-09-02T09:00:00Z' WHERE id = 't-1'", "expect": { "status": 200 } },
+        { "action": "db", "as": "partner", "sql": "DELETE FROM app_routines__template_steps WHERE template_id = 't-1'", "expect": { "status": 200 } },
+        {
+          "action": "db",
+          "as": "partner",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, sort_order, required, created_by_member_id, created_at, updated_at) VALUES ('s-3', 't-1', 'Bath, teeth and a story', 0, 1, ?, '2026-09-02T09:00:00Z', '2026-09-02T09:00:00Z')",
+          "params": ["{{partner}}"],
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "author",
+          "sql": "SELECT id FROM app_routines__template_steps WHERE template_id = 't-1'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "id": "s-3" }] }
+        }
+      ]
+    }
+  ]
+}

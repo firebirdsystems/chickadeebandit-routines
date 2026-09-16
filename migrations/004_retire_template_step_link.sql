@@ -1,0 +1,12 @@
+-- run_steps.template_step_id linked a run step to the template step it was
+-- started from. Nothing ever read it: a run step carries its own title,
+-- details and icon snapshots. But the column is a foreign key with no ON DELETE
+-- action, and saving a template deletes and re-inserts its steps, so every save
+-- first had to NULL the links. That UPDATE runs under run_steps' owner_only
+-- policy, so a saver who could not write some linked run step (one assigned to
+-- another member, in a space) hit "FOREIGN KEY constraint failed" on every save
+-- of any template that had been run. The app no longer writes the link; this
+-- clears the ones already stored. It runs outside row policy, so it reaches
+-- every row. The column stays (dropping it would rebuild the table) and is
+-- always NULL from here on.
+UPDATE app_routines__run_steps SET template_step_id = NULL WHERE template_step_id IS NOT NULL;

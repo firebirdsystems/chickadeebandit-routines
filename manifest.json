@@ -31,7 +31,7 @@
   "preload": {
     "templates": {"sql": "SELECT * FROM app_routines__templates ORDER BY created_at DESC"},
     "template_steps": {"sql": "SELECT * FROM app_routines__template_steps ORDER BY sort_order ASC"},
-    "runs": {"sql": "SELECT * FROM app_routines__runs WHERE status = 'active' ORDER BY started_at DESC"},
+    "runs": {"sql": "SELECT r.*, d.title AS detail_title, d.caregiver_label AS detail_caregiver_label, d.notes AS detail_notes FROM app_routines__runs r LEFT JOIN app_routines__run_details d ON d.run_id = r.id WHERE r.status = 'active' ORDER BY r.started_at DESC"},
     "run_steps": {"sql": "SELECT s.* FROM app_routines__run_steps s JOIN app_routines__runs r ON r.id = s.run_id AND r.status = 'active' ORDER BY s.sort_order ASC"},
     "caregiver_packets": {"sql": "SELECT * FROM app_routines__caregiver_packets ORDER BY created_at DESC"},
     "caregiver_packet_steps": {"sql": "SELECT * FROM app_routines__caregiver_packet_steps ORDER BY sort_order ASC"}
@@ -61,7 +61,8 @@
     "started_at",
     "completed_at",
     "canceled_at",
-    "archived_at"
+    "archived_at",
+    "restricted"
   ],
     "member_references": {
       "templates": [
@@ -104,6 +105,12 @@
           "on_removed": "null"
         }
       ],
+      "run_details": [
+        {
+          "column": "started_by_member_id",
+          "on_removed": "keep"
+        }
+      ],
       "run_steps": [
         {
           "column": "assigned_member_id",
@@ -135,13 +142,15 @@
       "kind": "inherit_visibility",
       "fk_column": "template_id",
       "parent_table": "templates",
-      "writer_column": "created_by_member_id"
+      "writer_column": "created_by_member_id",
+      "adults_bypass": true
     },
     "template_audience": {
       "kind": "inherit_visibility",
       "fk_column": "template_id",
       "parent_table": "templates",
-      "writer_column": "created_by_member_id"
+      "writer_column": "created_by_member_id",
+      "adults_bypass": true
     },
     "runs": {
       "kind": "adult_writable",
@@ -150,9 +159,17 @@
         "timestamp_column": "started_at",
         "override_key": "run_history",
         "dependent_tables": [
-          { "table": "run_steps", "foreign_key": "run_id" }
+          { "table": "run_steps", "foreign_key": "run_id" },
+          { "table": "run_details", "foreign_key": "run_id" }
         ]
       }
+    },
+    "run_details": {
+      "kind": "owner_or_visibility",
+      "member_column": "started_by_member_id",
+      "visibility_column": "visibility",
+      "everyone_values": ["everyone"],
+      "adult_values": ["adults"]
     },
     "run_steps": {
       "kind": "owner_only",
@@ -214,13 +231,13 @@
     "kind": "routine",
     "source": {
       "kind": "sql",
-      "query": "SELECT id AS id, title_snapshot AS title, run_date AS when_at, target_member_id AS member_id FROM app_routines__runs WHERE run_date = :today AND status = 'active' ORDER BY started_at LIMIT 10"
+      "query": "SELECT r.id AS id, COALESCE(d.title, r.title_snapshot) AS title, r.run_date AS when_at, r.target_member_id AS member_id FROM app_routines__runs r LEFT JOIN app_routines__run_details d ON d.run_id = r.id WHERE r.run_date = :today AND r.status = 'active' AND (r.restricted = 0 OR d.id IS NOT NULL) ORDER BY r.started_at LIMIT 10"
     }
   },
   "glance": {
     "source": {
       "kind": "sql",
-      "query": "SELECT COUNT(*) AS n FROM app_routines__runs WHERE run_date = :today AND status = 'active' LIMIT 1"
+      "query": "SELECT COUNT(*) AS n FROM app_routines__runs r LEFT JOIN app_routines__run_details d ON d.run_id = r.id WHERE r.run_date = :today AND r.status = 'active' AND (r.restricted = 0 OR d.id IS NOT NULL) LIMIT 1"
     },
     "display": {
       "template": "badge",
