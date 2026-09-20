@@ -1,5 +1,7 @@
 # Routines
 
+A [Chickadee Bandit](https://chickadeebandit.com/app-library/routines) app.
+
 Reusable household playbooks for Chickadee Bandit.
 
 Routines lets a household create templates for repeated flows like school mornings, bedtime, weekly resets, travel departure, babysitter nights, and pet-sitter instructions. A template can be started as a live routine run, and each run snapshots its steps so later template edits do not rewrite history.
