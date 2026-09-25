@@ -108,7 +108,11 @@
   <div id="app" class="app"><p class="muted">Loading routines...</p></div>
 
   <script type="module">
-    import { esc, initial, memberColor, isAdult, hubAlert, hubConfirm, searchMatch, hubToday } from "/hub-sdk.js";
+    import {
+      esc, initial, memberColor, isAdult, hubAlert, hubConfirm, searchMatch, hubToday,
+      createShareHelper, activeShareLinks, SHARE_EXPIRY_CHOICES, DEFAULT_SHARE_EXPIRY_HOURS,
+    } from "/hub-sdk.js";
+    import { createShareUi, createOverlayView } from "./share.js";
     import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, completionSummary, canCompleteStep, sortByOrder, visibleTemplates, searchableFields, templateSaveStatements, templateCreatePlan, MAX_BATCH_STATEMENTS, MAX_ROUTINE_STEPS, isRunSupervisor, buildRun, runDisplay, mayPublishRun, showRunTo } from "./logic.js";
 
     const CONTEXT = window.__CONTEXT_URL ?? "";
@@ -122,6 +126,31 @@
     // a member can write an attacker-chosen id via raw /api/db. Legit ids are
     // UUIDs, so restricting to [A-Za-z0-9_-] is lossless and injection-proof.
     const sid = v => String(v ?? "").replace(/[^A-Za-z0-9_-]/g, "");
+
+    // External share links (manifest.shareable.packet). A caregiver packet is
+    // already the "only what a caregiver should see" copy of a routine, so it is
+    // the one thing this app shares: a babysitter can open the link on their
+    // phone instead of being handed a printout. The hub injects these URLs only
+    // when the manifest declares `shareable`, and mints for adults only.
+    const share = createShareHelper(window.__SHARE_CREATE_URL, window.__SHARE_REVOKE_URL, window.__SHARE_LIST_URL);
+    const shareView = createOverlayView(document);
+    const shareUi = createShareUi({
+      share,
+      itemType: "packet",
+      noun: "packet",
+      scopeHtml: () => "The page shows the packet’s title, its notes and its steps as they were when the packet was made. Edits to the routine since then are not included. Contacts, health notes and documents are never on the page: send those separately.",
+      esc,
+      confirm: (message, opts) => hubConfirm({ message, ...opts, destructive: true }),
+      writeText: (text) => navigator.clipboard.writeText(text),
+      activeLinks: activeShareLinks,
+      expiryChoices: SHARE_EXPIRY_CHOICES,
+      defaultExpiryHours: DEFAULT_SHARE_EXPIRY_HOURS,
+      getMe: () => ME,
+      isAdmin: () => window.__IS_ADMIN === true,
+      memberName: (id) => memberMap.get(id)?.name ?? "",
+      view: shareView,
+    });
+    shareView.bind(shareUi);
 
     let members = [];
     let memberMap = new Map();
@@ -428,7 +457,10 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         <section class="card">
           <div class="row">
             <div><h2>${esc(packet.title)}</h2><p class="muted">${steps.length} shared steps · created ${esc(packet.created_at.slice(0, 10))}</p></div>
-            <button onclick="openPacketView('${sid(packet.id)}')">View / Print</button>
+            <div class="toolbar">
+              ${share.enabled ? `<button onclick="openPacketShare('${sid(packet.id)}')" data-testid="packet-share">Share</button>` : ""}
+              <button onclick="openPacketView('${sid(packet.id)}')">View / Print</button>
+            </div>
           </div>
         </section>
       `;
@@ -807,6 +839,11 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       tab = "packets";
       render();
     }
+
+    window.openPacketShare = (packetId) => {
+      const packet = packets.find((p) => p.id === packetId);
+      if (packet) shareUi.open({ id: packet.id, title: packet.title });
+    };
 
     window.openPacketView = (packetId) => {
       const packet = packets.find((p) => p.id === packetId);

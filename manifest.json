@@ -183,6 +183,28 @@
       "kind": "adult_only"
     }
   },
+  "shareable": {
+    "packet": {
+      "table": "caregiver_packets",
+      "title_column": "title",
+      "columns": [
+        { "column": "safe_notes", "label": "Notes for you", "format": "multiline" }
+      ],
+      "feed": {
+        "label": "Steps",
+        "table": "caregiver_packet_steps",
+        "fk_column": "packet_id",
+        "columns": [
+          { "column": "title_snapshot", "label": "Step", "role": "heading" },
+          { "column": "details_snapshot", "label": "Details", "format": "multiline", "role": "body" }
+        ],
+        "order_column": "sort_order",
+        "order": "oldest",
+        "max_items": 200,
+        "empty_text": "This packet has no steps."
+      }
+    }
+  },
   "publishes": [
     "routine.started",
     "routine.completed",
