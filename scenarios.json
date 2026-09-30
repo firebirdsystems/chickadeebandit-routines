@@ -283,6 +283,127 @@
           "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "notes": "ran late" }] }
         }
       ]
+    },
+    {
+      "name": "caregiver packets are the adults' curated copy: any household adult can correct one, while a child and a guest caregiver granted the app can neither read nor change it through app SQL",
+      "members": { "parent": "adult", "partner": "adult", "kid": "child", "sitter": "guest" },
+      "granted": ["sitter"],
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__caregiver_packets (id, title, safe_notes, include_health_notes, created_by_member_id, created_at, updated_at) VALUES ('pk1', 'Bedtime Instructions', 'Lights out at 8', 1, ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": ["{{parent}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, title_snapshot, details_snapshot, sort_order) VALUES ('ps1', 'pk1', 'Brush teeth', 'Two minutes', 0)"
+        },
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "SELECT id, safe_notes FROM app_routines__caregiver_packets",
+          "expect": { "status": 403, "errorIncludes": "adult" }
+        },
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "SELECT id FROM app_routines__caregiver_packet_steps",
+          "expect": { "status": 403, "errorIncludes": "adult" }
+        },
+        {
+          "comment": "A child cannot loosen what the sitter is told.",
+          "action": "db",
+          "as": "kid",
+          "sql": "UPDATE app_routines__caregiver_packets SET safe_notes = 'No bedtime tonight' WHERE id = 'pk1'",
+          "expect": { "status": 403, "errorIncludes": "adult" }
+        },
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "DELETE FROM app_routines__caregiver_packet_steps WHERE packet_id = 'pk1'",
+          "expect": { "status": 403, "errorIncludes": "adult" }
+        },
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, title_snapshot, sort_order) VALUES ('ps-kid', 'pk1', 'Ice cream before bed', 1)",
+          "expect": { "status": 403, "errorIncludes": "adult" }
+        },
+        {
+          "comment": "The sitter's lane is the share link, which shows only the declared columns; app SQL exposes nothing, not even the include_* flags.",
+          "action": "db",
+          "as": "sitter",
+          "sql": "SELECT id, safe_notes, include_health_notes FROM app_routines__caregiver_packets",
+          "expect": { "status": 403, "errorIncludes": "adult" }
+        },
+        {
+          "action": "db",
+          "as": "sitter",
+          "sql": "UPDATE app_routines__caregiver_packet_steps SET details_snapshot = 'Skip it' WHERE id = 'ps1'",
+          "expect": { "status": 403, "errorIncludes": "adult" }
+        },
+        {
+          "comment": "adult_only is shared stewardship: an adult who did not create the packet can fix it.",
+          "action": "db",
+          "as": "partner",
+          "sql": "UPDATE app_routines__caregiver_packet_steps SET details_snapshot = 'Two minutes, then floss' WHERE id = 'ps1'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT p.safe_notes, s.title_snapshot, s.details_snapshot FROM app_routines__caregiver_packets p JOIN app_routines__caregiver_packet_steps s ON s.packet_id = p.id",
+          "expect": {
+            "status": 200,
+            "rowCount": 1,
+            "rowsContain": [
+              {
+                "safe_notes": "Lights out at 8",
+                "title_snapshot": "Brush teeth",
+                "details_snapshot": "Two minutes, then floss"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "in a general shared space caregiver packets need no steward: a participant adult reads and edits another adult's packet, the same as the steward",
+      "context": "shared_space",
+      "members": { "a": "adult", "b": "adult", "steward": "admin" },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__caregiver_packets (id, title, safe_notes, created_by_member_id, created_at, updated_at) VALUES ('pk1', 'Pickup Instructions', 'Gate code 1234', ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": ["{{b}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, title_snapshot, sort_order) VALUES ('ps1', 'pk1', 'Sign out at front desk', 0)"
+        },
+        {
+          "action": "db",
+          "as": "a",
+          "sql": "UPDATE app_routines__caregiver_packets SET safe_notes = 'Gate code changed to 5678' WHERE id = 'pk1'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "steward",
+          "sql": "UPDATE app_routines__caregiver_packet_steps SET title_snapshot = 'Sign out with ID' WHERE id = 'ps1'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "SELECT p.safe_notes, s.title_snapshot FROM app_routines__caregiver_packets p JOIN app_routines__caregiver_packet_steps s ON s.packet_id = p.id",
+          "expect": {
+            "status": 200,
+            "rowCount": 1,
+            "rowsContain": [{ "safe_notes": "Gate code changed to 5678", "title_snapshot": "Sign out with ID" }]
+          }
+        }
+      ]
     }
   ]
 }
