@@ -153,6 +153,88 @@
       ]
     },
     {
+      "name": "in a general shared space the template's owner edits or removes steps and audience rows the steward added to it, while another participant adult still cannot",
+      "context": "shared_space",
+      "members": { "a": "adult", "b": "adult", "steward": "admin" },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__templates (id, title, category, visibility, owner_member_id, created_at, updated_at) VALUES ('t-b', 'Opening shift', 'household', 'everyone', ?, '2026-09-01T09:00:00Z', '2026-09-01T09:00:00Z')",
+          "params": ["{{b}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, sort_order, required, created_by_member_id, created_at, updated_at) VALUES ('s-steward', 't-b', 'Count the till', 1, 1, ?, '2026-09-02T09:00:00Z', '2026-09-02T09:00:00Z')",
+          "params": ["{{steward}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_audience (id, template_id, member_id, created_by_member_id) VALUES ('au-steward', 't-b', ?, ?)",
+          "params": ["{{a}}", "{{steward}}"]
+        },
+        {
+          "action": "db",
+          "as": "a",
+          "sql": "UPDATE app_routines__template_steps SET sort_order = 9 WHERE id = 's-steward'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "SELECT sort_order FROM app_routines__template_steps WHERE id = 's-steward'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "sort_order": 1 }] }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "UPDATE app_routines__template_steps SET sort_order = 7 WHERE id = 's-steward'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "steward",
+          "sql": "SELECT sort_order FROM app_routines__template_steps WHERE id = 's-steward'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "sort_order": 7 }] }
+        },
+        {
+          "action": "db",
+          "as": "a",
+          "sql": "DELETE FROM app_routines__template_audience WHERE id = 'au-steward'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "SELECT id FROM app_routines__template_audience WHERE template_id = 't-b'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "id": "au-steward" }] }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "DELETE FROM app_routines__template_audience WHERE id = 'au-steward'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "DELETE FROM app_routines__template_steps WHERE id = 's-steward'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "steward",
+          "sql": "SELECT id FROM app_routines__template_audience WHERE template_id = 't-b'",
+          "expect": { "status": 200, "rowCount": 0 }
+        },
+        {
+          "action": "db",
+          "as": "steward",
+          "sql": "SELECT id FROM app_routines__template_steps WHERE template_id = 't-b'",
+          "expect": { "status": 200, "rowCount": 0 }
+        }
+      ]
+    },
+    {
       "name": "in a shared space a participant adult reaches neither another member's run details nor run steps assigned to someone else, while the steward reaches both",
       "context": "shared_space",
       "members": { "a": "adult", "b": "adult", "steward": "admin" },

@@ -27,6 +27,15 @@ describe("manifest.json", () => {
     expect(manifest.row_policies.caregiver_packet_steps.kind).toBe("adult_only");
   });
 
+  it("lets a template's owner maintain steps and audience rows written by others", () => {
+    for (const table of ["template_steps", "template_audience"]) {
+      const policy = manifest.row_policies[table];
+      expect(policy.kind).toBe("inherit_visibility");
+      expect(policy.parent_table).toBe("templates");
+      expect(policy.parent_owner_actions).toEqual(["update", "delete"]);
+    }
+  });
+
   it("has source and migration files", () => {
     expect(existsSync(join(__dirname, "../src/index.html"))).toBe(true);
     expect(existsSync(join(__dirname, "../src/logic.js"))).toBe(true);
