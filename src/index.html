@@ -110,7 +110,7 @@
   <script type="module">
     import {
       esc, initial, memberColor, isAdult, hubAlert, hubConfirm, searchMatch, hubToday,
-      createShareHelper, activeShareLinks, SHARE_EXPIRY_CHOICES, DEFAULT_SHARE_EXPIRY_HOURS,
+      createShareHelper, activeShareLinks, SHARE_EXPIRY_CHOICES, DEFAULT_SHARE_EXPIRY_HOURS, glyph,
     } from "/hub-sdk.js";
     import { createShareUi, createOverlayView } from "./share.js";
     import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, completionSummary, canCompleteStep, sortByOrder, visibleTemplates, searchableFields, templateSaveStatements, templateCreatePlan, MAX_BATCH_STATEMENTS, MAX_ROUTINE_STEPS, isRunSupervisor, buildRun, runDisplay, mayPublishRun, showRunTo } from "./logic.js";
@@ -140,6 +140,7 @@
       noun: "packet",
       scopeHtml: () => "The page shows the packet’s title, its notes and its steps as they were when the packet was made. Edits to the routine since then are not included. Contacts, health notes and documents are never on the page: send those separately.",
       esc,
+      glyph,
       confirm: (message, opts) => hubConfirm({ message, ...opts, destructive: true }),
       writeText: (text) => navigator.clipboard.writeText(text),
       activeLinks: activeShareLinks,
