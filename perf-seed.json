@@ -1,0 +1,2367 @@
+{
+ "seed": [
+  {
+   "sql": "INSERT INTO app_routines__templates (id, title, description, category, visibility, owner_member_id, default_start_time, default_duration_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-30 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-morning",
+    "Morning launch",
+    "Out the door by 8:10 without anyone shouting.",
+    "household",
+    "everyone",
+    "{{me}}",
+    "07:00",
+    60
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-morning-s1",
+    "perf-tpl-morning",
+    "Get dressed",
+    "Clothes are on the chair.",
+    "👕",
+    10,
+    0,
+    "kid",
+    1,
+    1,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+1 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+1 minutes'))",
+   "params": [
+    "perf-tpl-morning-s2",
+    "perf-tpl-morning",
+    "Breakfast",
+    "Cereal or toast, bowl in the dishwasher after.",
+    "🥣",
+    15,
+    10,
+    "kid",
+    1,
+    2,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+2 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+2 minutes'))",
+   "params": [
+    "perf-tpl-morning-s3",
+    "perf-tpl-morning",
+    "Brush teeth",
+    "Two minutes, use the timer.",
+    "🪥",
+    2,
+    30,
+    "kid",
+    1,
+    3,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+3 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+3 minutes'))",
+   "params": [
+    "perf-tpl-morning-s4",
+    "perf-tpl-morning",
+    "Pack the bag",
+    "Lunch, water bottle, reading book.",
+    "🎒",
+    40,
+    "kid",
+    1,
+    4,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+4 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days','+4 minutes'))",
+   "params": [
+    "perf-tpl-morning-s5",
+    "perf-tpl-morning",
+    "Shoes and coat",
+    "By the front door.",
+    "👟",
+    50,
+    "everyone",
+    1,
+    5,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__templates (id, title, description, category, visibility, owner_member_id, target_member_id, default_start_time, default_duration_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-28 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-bedtime",
+    "Bedtime",
+    "Calm wind-down, lights out at 8.",
+    "household",
+    "everyone",
+    "{{partner}}",
+    "{{child2}}",
+    "19:15",
+    45
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-bedtime-s1",
+    "perf-tpl-bedtime",
+    "Pajamas",
+    "Change clothes and put laundry away.",
+    "🌙",
+    0,
+    "{{child2}}",
+    "kid",
+    1,
+    1,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+1 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+1 minutes'))",
+   "params": [
+    "perf-tpl-bedtime-s2",
+    "perf-tpl-bedtime",
+    "Bathroom",
+    "Brush teeth, wash face, use bathroom.",
+    "🚿",
+    10,
+    10,
+    "{{child2}}",
+    "kid",
+    1,
+    2,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+2 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+2 minutes'))",
+   "params": [
+    "perf-tpl-bedtime-s3",
+    "perf-tpl-bedtime",
+    "Tomorrow prep",
+    "Choose clothes and pack backpack.",
+    "👟",
+    20,
+    "{{child2}}",
+    "kid",
+    0,
+    3,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+3 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+3 minutes'))",
+   "params": [
+    "perf-tpl-bedtime-s4",
+    "perf-tpl-bedtime",
+    "Read and lights out",
+    "Books, water, final goodnight.",
+    "📚",
+    20,
+    30,
+    "{{partner}}",
+    "parent",
+    1,
+    4,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+4 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-115 days','+4 minutes'))",
+   "params": [
+    "perf-tpl-bedtime-s5",
+    "perf-tpl-bedtime",
+    "Night light on",
+    "Door open a crack.",
+    "🌙",
+    44,
+    "{{partner}}",
+    "parent",
+    0,
+    5,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__templates (id, title, description, category, visibility, owner_member_id, default_start_time, default_duration_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-26 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-reset",
+    "Weekly Reset",
+    "Quick household reset for the week ahead.",
+    "household",
+    "everyone",
+    "{{me}}",
+    "16:00",
+    60
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-reset-s1",
+    "perf-tpl-reset",
+    "Clear shared spaces",
+    "Kitchen counter, entryway, and living room.",
+    "🧹",
+    20,
+    0,
+    "everyone",
+    1,
+    1,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+1 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+1 minutes'))",
+   "params": [
+    "perf-tpl-reset-s2",
+    "perf-tpl-reset",
+    "Review calendar",
+    "Check events, rides, meals, and deadlines.",
+    "📅",
+    20,
+    "{{me}}",
+    "adult",
+    1,
+    2,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+2 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+2 minutes'))",
+   "params": [
+    "perf-tpl-reset-s3",
+    "perf-tpl-reset",
+    "Plan meals",
+    "Pick easy meals and add missing grocery items.",
+    "🍽️",
+    35,
+    "{{partner}}",
+    "adult",
+    0,
+    3,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+3 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+3 minutes'))",
+   "params": [
+    "perf-tpl-reset-s4",
+    "perf-tpl-reset",
+    "Laundry check",
+    "Start what is needed for Monday.",
+    "🧺",
+    45,
+    "everyone",
+    0,
+    4,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+4 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days','+4 minutes'))",
+   "params": [
+    "perf-tpl-reset-s5",
+    "perf-tpl-reset",
+    "Bins out",
+    "Recycling on odd weeks.",
+    "🗑️",
+    55,
+    "{{child}}",
+    "kid",
+    1,
+    5,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__templates (id, title, description, category, visibility, owner_member_id, target_member_id, default_start_time, default_duration_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-24 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-afterschool",
+    "After school",
+    "Bag, snack, homework, then free time.",
+    "household",
+    "everyone",
+    "{{partner}}",
+    "{{child}}",
+    "15:45",
+    75
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-afterschool-s1",
+    "perf-tpl-afterschool",
+    "Empty the bag",
+    "Lunchbox to the kitchen, letters on the fridge.",
+    "🎒",
+    0,
+    "{{child}}",
+    "kid",
+    1,
+    1,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+1 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+1 minutes'))",
+   "params": [
+    "perf-tpl-afterschool-s2",
+    "perf-tpl-afterschool",
+    "Snack",
+    "Fruit bowl first.",
+    "🍎",
+    15,
+    5,
+    "{{child}}",
+    "kid",
+    0,
+    2,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+2 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+2 minutes'))",
+   "params": [
+    "perf-tpl-afterschool-s3",
+    "perf-tpl-afterschool",
+    "Homework",
+    "At the kitchen table, phone in the basket.",
+    "📚",
+    30,
+    20,
+    "{{child}}",
+    "kid",
+    1,
+    3,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+3 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+3 minutes'))",
+   "params": [
+    "perf-tpl-afterschool-s4",
+    "perf-tpl-afterschool",
+    "Music practice",
+    "Fifteen minutes of piano.",
+    "🎵",
+    15,
+    50,
+    "{{child}}",
+    "kid",
+    1,
+    4,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+4 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-105 days','+4 minutes'))",
+   "params": [
+    "perf-tpl-afterschool-s5",
+    "perf-tpl-afterschool",
+    "Feed the dog",
+    "One scoop, fresh water.",
+    "🐾",
+    70,
+    "{{child}}",
+    "kid",
+    1,
+    5,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__templates (id, title, description, category, visibility, owner_member_id, default_start_time, default_duration_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-22 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-travel",
+    "Travel Departure",
+    "Final pass before leaving home.",
+    "travel",
+    "everyone",
+    "{{me}}",
+    "08:00",
+    40
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-travel-s1",
+    "perf-tpl-travel",
+    "Documents and meds",
+    "IDs, tickets, medications, chargers.",
+    "🛂",
+    0,
+    "{{me}}",
+    "adult",
+    1,
+    1,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+1 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+1 minutes'))",
+   "params": [
+    "perf-tpl-travel-s2",
+    "perf-tpl-travel",
+    "House check",
+    "Trash, thermostat, doors, windows, lights.",
+    "🏠",
+    15,
+    "{{partner}}",
+    "adult",
+    1,
+    2,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+2 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+2 minutes'))",
+   "params": [
+    "perf-tpl-travel-s3",
+    "perf-tpl-travel",
+    "Bags loaded",
+    "Count bags and special items.",
+    "🧳",
+    25,
+    "everyone",
+    1,
+    3,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+3 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+3 minutes'))",
+   "params": [
+    "perf-tpl-travel-s4",
+    "perf-tpl-travel",
+    "Final bathroom and water",
+    "Last stop before getting in the car.",
+    "💧",
+    35,
+    "everyone",
+    0,
+    4,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+4 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days','+4 minutes'))",
+   "params": [
+    "perf-tpl-travel-s5",
+    "perf-tpl-travel",
+    "Lock up",
+    "Key under the usual pot for the neighbour.",
+    "🔒",
+    39,
+    "{{me}}",
+    "adult",
+    1,
+    5,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__templates (id, title, description, category, visibility, owner_member_id, default_start_time, default_duration_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-20 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-sitter",
+    "Babysitter Night",
+    "Share-safe evening instructions for a sitter.",
+    "caregiver",
+    "everyone",
+    "{{me}}",
+    "17:30",
+    180
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-sitter-s1",
+    "perf-tpl-sitter",
+    "Dinner",
+    "Pasta is in the fridge, no nuts for Leo.",
+    "🍝",
+    0,
+    "caregiver",
+    1,
+    1,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+1 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+1 minutes'))",
+   "params": [
+    "perf-tpl-sitter-s2",
+    "perf-tpl-sitter",
+    "Activities",
+    "Board games or one film, no tablets after 7.",
+    "🎲",
+    30,
+    "caregiver",
+    0,
+    2,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+2 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+2 minutes'))",
+   "params": [
+    "perf-tpl-sitter-s3",
+    "perf-tpl-sitter",
+    "Bedtime routine",
+    "Bathroom, pajamas, books, lights out.",
+    "🛏️",
+    90,
+    "caregiver",
+    1,
+    3,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+3 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+3 minutes'))",
+   "params": [
+    "perf-tpl-sitter-s4",
+    "perf-tpl-sitter",
+    "House close-up",
+    "Doors locked, lights, pets, and parent update.",
+    "🔒",
+    150,
+    "caregiver",
+    1,
+    4,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+4 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days','+4 minutes'))",
+   "params": [
+    "perf-tpl-sitter-s5",
+    "perf-tpl-sitter",
+    "Message us",
+    "A quick text once they are asleep.",
+    "📸",
+    160,
+    "caregiver",
+    0,
+    5,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__templates (id, title, description, category, visibility, owner_member_id, default_start_time, default_duration_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-18 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-budget",
+    "Monthly money check",
+    "Bills, savings and the joint account.",
+    "household",
+    "adults",
+    "{{me}}",
+    "20:30",
+    45
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-budget-s1",
+    "perf-tpl-budget",
+    "Check the joint account",
+    "Anything unexpected over fifty.",
+    "📅",
+    0,
+    "{{me}}",
+    "adult",
+    1,
+    1,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+1 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+1 minutes'))",
+   "params": [
+    "perf-tpl-budget-s2",
+    "perf-tpl-budget",
+    "Pay the credit card",
+    "In full, from the joint account.",
+    "✅",
+    10,
+    "{{partner}}",
+    "adult",
+    1,
+    2,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+2 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+2 minutes'))",
+   "params": [
+    "perf-tpl-budget-s3",
+    "perf-tpl-budget",
+    "Move savings",
+    "Standing amount to the holiday pot.",
+    "⭐",
+    20,
+    "{{me}}",
+    "adult",
+    1,
+    3,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, assigned_member_id, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+3 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+3 minutes'))",
+   "params": [
+    "perf-tpl-budget-s4",
+    "perf-tpl-budget",
+    "Review subscriptions",
+    "Cancel what nobody used.",
+    "🧹",
+    30,
+    "{{partner}}",
+    "adult",
+    0,
+    4,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+4 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days','+4 minutes'))",
+   "params": [
+    "perf-tpl-budget-s5",
+    "perf-tpl-budget",
+    "Agree next month's big spends",
+    "Write them in the shared note.",
+    "☕",
+    40,
+    "adult",
+    1,
+    5,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__templates (id, title, description, category, visibility, owner_member_id, default_start_time, default_duration_minutes, archived_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-20 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-16 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-petsitter",
+    "Pet Sitter",
+    "Care steps for someone watching pets.",
+    "caregiver",
+    "everyone",
+    "{{adult2}}",
+    "18:00",
+    60
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+0 minutes'))",
+   "params": [
+    "perf-tpl-petsitter-s1",
+    "perf-tpl-petsitter",
+    "Food and water",
+    "One scoop each, bowls by the back door.",
+    "🐾",
+    0,
+    "caregiver",
+    1,
+    1,
+    "{{adult2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, timer_minutes, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+1 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+1 minutes'))",
+   "params": [
+    "perf-tpl-petsitter-s2",
+    "perf-tpl-petsitter",
+    "Walk or litter",
+    "Round the park, bags on the lead.",
+    "🦮",
+    30,
+    15,
+    "caregiver",
+    1,
+    2,
+    "{{adult2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+2 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+2 minutes'))",
+   "params": [
+    "perf-tpl-petsitter-s3",
+    "perf-tpl-petsitter",
+    "Medication",
+    "Half a tablet in cheese, evenings only.",
+    "💊",
+    30,
+    "caregiver",
+    0,
+    3,
+    "{{adult2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+3 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+3 minutes'))",
+   "params": [
+    "perf-tpl-petsitter-s4",
+    "perf-tpl-petsitter",
+    "Update owner",
+    "Send photo or quick status note.",
+    "📸",
+    45,
+    "caregiver",
+    0,
+    4,
+    "{{adult2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, details, icon, suggested_offset_minutes, role_label, required, sort_order, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+4 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days','+4 minutes'))",
+   "params": [
+    "perf-tpl-petsitter-s5",
+    "perf-tpl-petsitter",
+    "Lock the cat flap",
+    "After nine.",
+    "🔒",
+    55,
+    "caregiver",
+    1,
+    5,
+    "{{adult2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-85 minutes'), ?)",
+   "params": [
+    "perf-run-01",
+    "perf-tpl-morning",
+    "Morning launch",
+    "{{date:0}}",
+    "active",
+    "{{me}}",
+    "{{child}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-75 minutes'))",
+   "params": [
+    "perf-run-01-s1",
+    "perf-run-01",
+    "Get dressed",
+    "Clothes are on the chair.",
+    "👕",
+    10,
+    "{{child}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-71 minutes'))",
+   "params": [
+    "perf-run-01-s2",
+    "perf-run-01",
+    "Breakfast",
+    "Cereal or toast, bowl in the dishwasher after.",
+    "🥣",
+    15,
+    "{{child}}",
+    "kid",
+    1,
+    2,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-67 minutes'))",
+   "params": [
+    "perf-run-01-s3",
+    "perf-run-01",
+    "Brush teeth",
+    "Two minutes, use the timer.",
+    "🪥",
+    2,
+    "{{child}}",
+    "kid",
+    1,
+    3,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-01-s4",
+    "perf-run-01",
+    "Pack the bag",
+    "Lunch, water bottle, reading book.",
+    "🎒",
+    "{{child}}",
+    "kid",
+    1,
+    4,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-01-s5",
+    "perf-run-01",
+    "Shoes and coat",
+    "By the front door.",
+    "👟",
+    "{{child}}",
+    "everyone",
+    1,
+    5,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-80 minutes'), ?)",
+   "params": [
+    "perf-run-02",
+    "perf-tpl-morning",
+    "Morning launch",
+    "{{date:0}}",
+    "active",
+    "{{me}}",
+    "{{child2}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-70 minutes'))",
+   "params": [
+    "perf-run-02-s1",
+    "perf-run-02",
+    "Get dressed",
+    "Clothes are on the chair.",
+    "👕",
+    10,
+    "{{child2}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-66 minutes'))",
+   "params": [
+    "perf-run-02-s2",
+    "perf-run-02",
+    "Breakfast",
+    "Cereal or toast, bowl in the dishwasher after.",
+    "🥣",
+    15,
+    "{{child2}}",
+    "kid",
+    1,
+    2,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-02-s3",
+    "perf-run-02",
+    "Brush teeth",
+    "Two minutes, use the timer.",
+    "🪥",
+    2,
+    "{{child2}}",
+    "kid",
+    1,
+    3,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-02-s4",
+    "perf-run-02",
+    "Pack the bag",
+    "Lunch, water bottle, reading book.",
+    "🎒",
+    "{{child2}}",
+    "kid",
+    1,
+    4,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-02-s5",
+    "perf-run-02",
+    "Shoes and coat",
+    "By the front door.",
+    "👟",
+    "{{child2}}",
+    "everyone",
+    1,
+    5,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-75 minutes'), ?)",
+   "params": [
+    "perf-run-03",
+    "perf-tpl-afterschool",
+    "After school",
+    "{{date:0}}",
+    "active",
+    "{{partner}}",
+    "{{child}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-65 minutes'))",
+   "params": [
+    "perf-run-03-s1",
+    "perf-run-03",
+    "Empty the bag",
+    "Lunchbox to the kitchen, letters on the fridge.",
+    "🎒",
+    "{{child}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-03-s2",
+    "perf-run-03",
+    "Snack",
+    "Fruit bowl first.",
+    "🍎",
+    15,
+    "{{child}}",
+    "kid",
+    0,
+    2,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-03-s3",
+    "perf-run-03",
+    "Homework",
+    "At the kitchen table, phone in the basket.",
+    "📚",
+    30,
+    "{{child}}",
+    "kid",
+    1,
+    3,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-03-s4",
+    "perf-run-03",
+    "Music practice",
+    "Fifteen minutes of piano.",
+    "🎵",
+    15,
+    "{{child}}",
+    "kid",
+    1,
+    4,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-03-s5",
+    "perf-run-03",
+    "Feed the dog",
+    "One scoop, fresh water.",
+    "🐾",
+    "{{child}}",
+    "kid",
+    1,
+    5,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, started_at, restricted) VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-70 minutes'), ?)",
+   "params": [
+    "perf-run-04",
+    "perf-tpl-budget",
+    "Private routine",
+    "{{date:0}}",
+    "active",
+    "{{me}}",
+    1
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_details (id, run_id, started_by_member_id, visibility, title, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-70 minutes'))",
+   "params": [
+    "perf-run-04",
+    "perf-run-04",
+    "{{me}}",
+    "adults",
+    "Monthly money check",
+    "Car insurance renews this month"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-60 minutes'))",
+   "params": [
+    "perf-run-04-s1",
+    "perf-run-04",
+    "Check the joint account",
+    "Anything unexpected over fifty.",
+    "📅",
+    "{{me}}",
+    "adult",
+    1,
+    1,
+    "done",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','0 days','-56 minutes'))",
+   "params": [
+    "perf-run-04-s2",
+    "perf-run-04",
+    "Pay the credit card",
+    "In full, from the joint account.",
+    "✅",
+    "{{partner}}",
+    "adult",
+    1,
+    2,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-04-s3",
+    "perf-run-04",
+    "Move savings",
+    "Standing amount to the holiday pot.",
+    "⭐",
+    "{{me}}",
+    "adult",
+    1,
+    3,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-04-s4",
+    "perf-run-04",
+    "Review subscriptions",
+    "Cancel what nobody used.",
+    "🧹",
+    "{{partner}}",
+    "adult",
+    0,
+    4,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-04-s5",
+    "perf-run-04",
+    "Agree next month's big spends",
+    "Write them in the shared note.",
+    "☕",
+    "adult",
+    1,
+    5,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, caregiver_label, notes, started_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+0 minutes'), ?)",
+   "params": [
+    "perf-run-05",
+    "perf-tpl-sitter",
+    "Babysitter Night",
+    "{{date:-1}}",
+    "active",
+    "{{me}}",
+    "Priya (sitter)",
+    "We are back by 10:30",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-05-s1",
+    "perf-run-05",
+    "Dinner",
+    "Pasta is in the fridge, no nuts for Leo.",
+    "🍝",
+    "caregiver",
+    1,
+    1,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-05-s2",
+    "perf-run-05",
+    "Activities",
+    "Board games or one film, no tablets after 7.",
+    "🎲",
+    "caregiver",
+    0,
+    2,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-05-s3",
+    "perf-run-05",
+    "Bedtime routine",
+    "Bathroom, pajamas, books, lights out.",
+    "🛏️",
+    "caregiver",
+    1,
+    3,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-05-s4",
+    "perf-run-05",
+    "House close-up",
+    "Doors locked, lights, pets, and parent update.",
+    "🔒",
+    "caregiver",
+    1,
+    4,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-05-s5",
+    "perf-run-05",
+    "Message us",
+    "A quick text once they are asleep.",
+    "📸",
+    "caregiver",
+    0,
+    5,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, completed_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+50 minutes'), ?)",
+   "params": [
+    "perf-run-06",
+    "perf-tpl-morning",
+    "Morning launch",
+    "{{date:-1}}",
+    "completed",
+    "{{me}}",
+    "{{child}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+5 minutes'))",
+   "params": [
+    "perf-run-06-s1",
+    "perf-run-06",
+    "Get dressed",
+    "Clothes are on the chair.",
+    "👕",
+    10,
+    "{{child}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+13 minutes'))",
+   "params": [
+    "perf-run-06-s2",
+    "perf-run-06",
+    "Breakfast",
+    "Cereal or toast, bowl in the dishwasher after.",
+    "🥣",
+    15,
+    "{{child}}",
+    "kid",
+    1,
+    2,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+21 minutes'))",
+   "params": [
+    "perf-run-06-s3",
+    "perf-run-06",
+    "Brush teeth",
+    "Two minutes, use the timer.",
+    "🪥",
+    2,
+    "{{child}}",
+    "kid",
+    1,
+    3,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+29 minutes'))",
+   "params": [
+    "perf-run-06-s4",
+    "perf-run-06",
+    "Pack the bag",
+    "Lunch, water bottle, reading book.",
+    "🎒",
+    "{{child}}",
+    "kid",
+    1,
+    4,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+37 minutes'))",
+   "params": [
+    "perf-run-06-s5",
+    "perf-run-06",
+    "Shoes and coat",
+    "By the front door.",
+    "👟",
+    "{{child}}",
+    "everyone",
+    1,
+    5,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, completed_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+50 minutes'), ?)",
+   "params": [
+    "perf-run-07",
+    "perf-tpl-bedtime",
+    "Bedtime",
+    "{{date:-1}}",
+    "completed",
+    "{{partner}}",
+    "{{child2}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+5 minutes'))",
+   "params": [
+    "perf-run-07-s1",
+    "perf-run-07",
+    "Pajamas",
+    "Change clothes and put laundry away.",
+    "🌙",
+    "{{child2}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+13 minutes'))",
+   "params": [
+    "perf-run-07-s2",
+    "perf-run-07",
+    "Bathroom",
+    "Brush teeth, wash face, use bathroom.",
+    "🚿",
+    10,
+    "{{child2}}",
+    "kid",
+    1,
+    2,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+21 minutes'))",
+   "params": [
+    "perf-run-07-s3",
+    "perf-run-07",
+    "Tomorrow prep",
+    "Choose clothes and pack backpack.",
+    "👟",
+    "{{child2}}",
+    "kid",
+    0,
+    3,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+29 minutes'))",
+   "params": [
+    "perf-run-07-s4",
+    "perf-run-07",
+    "Read and lights out",
+    "Books, water, final goodnight.",
+    "📚",
+    20,
+    "{{partner}}",
+    "parent",
+    1,
+    4,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+37 minutes'))",
+   "params": [
+    "perf-run-07-s5",
+    "perf-run-07",
+    "Night light on",
+    "Door open a crack.",
+    "🌙",
+    "{{partner}}",
+    "parent",
+    0,
+    5,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, completed_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+50 minutes'), ?)",
+   "params": [
+    "perf-run-08",
+    "perf-tpl-morning",
+    "Morning launch",
+    "{{date:-2}}",
+    "completed",
+    "{{me}}",
+    "{{child2}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+5 minutes'))",
+   "params": [
+    "perf-run-08-s1",
+    "perf-run-08",
+    "Get dressed",
+    "Clothes are on the chair.",
+    "👕",
+    10,
+    "{{child2}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+13 minutes'))",
+   "params": [
+    "perf-run-08-s2",
+    "perf-run-08",
+    "Breakfast",
+    "Cereal or toast, bowl in the dishwasher after.",
+    "🥣",
+    15,
+    "{{child2}}",
+    "kid",
+    1,
+    2,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+21 minutes'))",
+   "params": [
+    "perf-run-08-s3",
+    "perf-run-08",
+    "Brush teeth",
+    "Two minutes, use the timer.",
+    "🪥",
+    2,
+    "{{child2}}",
+    "kid",
+    1,
+    3,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+29 minutes'))",
+   "params": [
+    "perf-run-08-s4",
+    "perf-run-08",
+    "Pack the bag",
+    "Lunch, water bottle, reading book.",
+    "🎒",
+    "{{child2}}",
+    "kid",
+    1,
+    4,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+37 minutes'))",
+   "params": [
+    "perf-run-08-s5",
+    "perf-run-08",
+    "Shoes and coat",
+    "By the front door.",
+    "👟",
+    "{{child2}}",
+    "everyone",
+    1,
+    5,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, completed_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+50 minutes'), ?)",
+   "params": [
+    "perf-run-09",
+    "perf-tpl-afterschool",
+    "After school",
+    "{{date:-2}}",
+    "completed",
+    "{{partner}}",
+    "{{child}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+5 minutes'))",
+   "params": [
+    "perf-run-09-s1",
+    "perf-run-09",
+    "Empty the bag",
+    "Lunchbox to the kitchen, letters on the fridge.",
+    "🎒",
+    "{{child}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+13 minutes'))",
+   "params": [
+    "perf-run-09-s2",
+    "perf-run-09",
+    "Snack",
+    "Fruit bowl first.",
+    "🍎",
+    15,
+    "{{child}}",
+    "kid",
+    0,
+    2,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+21 minutes'))",
+   "params": [
+    "perf-run-09-s3",
+    "perf-run-09",
+    "Homework",
+    "At the kitchen table, phone in the basket.",
+    "📚",
+    30,
+    "{{child}}",
+    "kid",
+    1,
+    3,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days','+29 minutes'))",
+   "params": [
+    "perf-run-09-s4",
+    "perf-run-09",
+    "Music practice",
+    "Fifteen minutes of piano.",
+    "🎵",
+    15,
+    "{{child}}",
+    "kid",
+    1,
+    4,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-09-s5",
+    "perf-run-09",
+    "Feed the dog",
+    "One scoop, fresh water.",
+    "🐾",
+    "{{child}}",
+    "kid",
+    1,
+    5,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, completed_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days','+50 minutes'), ?)",
+   "params": [
+    "perf-run-10",
+    "perf-tpl-bedtime",
+    "Bedtime",
+    "{{date:-3}}",
+    "completed",
+    "{{me}}",
+    "{{child2}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days','+5 minutes'))",
+   "params": [
+    "perf-run-10-s1",
+    "perf-run-10",
+    "Pajamas",
+    "Change clothes and put laundry away.",
+    "🌙",
+    "{{child2}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days','+13 minutes'))",
+   "params": [
+    "perf-run-10-s2",
+    "perf-run-10",
+    "Bathroom",
+    "Brush teeth, wash face, use bathroom.",
+    "🚿",
+    10,
+    "{{child2}}",
+    "kid",
+    1,
+    2,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days','+21 minutes'))",
+   "params": [
+    "perf-run-10-s3",
+    "perf-run-10",
+    "Tomorrow prep",
+    "Choose clothes and pack backpack.",
+    "👟",
+    "{{child2}}",
+    "kid",
+    0,
+    3,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days','+29 minutes'))",
+   "params": [
+    "perf-run-10-s4",
+    "perf-run-10",
+    "Read and lights out",
+    "Books, water, final goodnight.",
+    "📚",
+    20,
+    "{{partner}}",
+    "parent",
+    1,
+    4,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-10-s5",
+    "perf-run-10",
+    "Night light on",
+    "Door open a crack.",
+    "🌙",
+    "{{partner}}",
+    "parent",
+    0,
+    5,
+    "skipped"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, started_at, completed_at, restricted) VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days','+50 minutes'), ?)",
+   "params": [
+    "perf-run-11",
+    "perf-tpl-reset",
+    "Weekly Reset",
+    "{{date:-4}}",
+    "completed",
+    "{{partner}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days','+5 minutes'))",
+   "params": [
+    "perf-run-11-s1",
+    "perf-run-11",
+    "Clear shared spaces",
+    "Kitchen counter, entryway, and living room.",
+    "🧹",
+    20,
+    "everyone",
+    1,
+    1,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days','+13 minutes'))",
+   "params": [
+    "perf-run-11-s2",
+    "perf-run-11",
+    "Review calendar",
+    "Check events, rides, meals, and deadlines.",
+    "📅",
+    "{{me}}",
+    "adult",
+    1,
+    2,
+    "done",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days','+21 minutes'))",
+   "params": [
+    "perf-run-11-s3",
+    "perf-run-11",
+    "Plan meals",
+    "Pick easy meals and add missing grocery items.",
+    "🍽️",
+    "{{partner}}",
+    "adult",
+    0,
+    3,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days','+29 minutes'))",
+   "params": [
+    "perf-run-11-s4",
+    "perf-run-11",
+    "Laundry check",
+    "Start what is needed for Monday.",
+    "🧺",
+    "everyone",
+    0,
+    4,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days','+37 minutes'))",
+   "params": [
+    "perf-run-11-s5",
+    "perf-run-11",
+    "Bins out",
+    "Recycling on odd weeks.",
+    "🗑️",
+    "{{child}}",
+    "kid",
+    1,
+    5,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, completed_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-5 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-5 days','+50 minutes'), ?)",
+   "params": [
+    "perf-run-12",
+    "perf-tpl-morning",
+    "Morning launch",
+    "{{date:-5}}",
+    "completed",
+    "{{me}}",
+    "{{child}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-5 days','+5 minutes'))",
+   "params": [
+    "perf-run-12-s1",
+    "perf-run-12",
+    "Get dressed",
+    "Clothes are on the chair.",
+    "👕",
+    10,
+    "{{child}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-5 days','+13 minutes'))",
+   "params": [
+    "perf-run-12-s2",
+    "perf-run-12",
+    "Breakfast",
+    "Cereal or toast, bowl in the dishwasher after.",
+    "🥣",
+    15,
+    "{{child}}",
+    "kid",
+    1,
+    2,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-5 days','+21 minutes'))",
+   "params": [
+    "perf-run-12-s3",
+    "perf-run-12",
+    "Brush teeth",
+    "Two minutes, use the timer.",
+    "🪥",
+    2,
+    "{{child}}",
+    "kid",
+    1,
+    3,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-5 days','+29 minutes'))",
+   "params": [
+    "perf-run-12-s4",
+    "perf-run-12",
+    "Pack the bag",
+    "Lunch, water bottle, reading book.",
+    "🎒",
+    "{{child}}",
+    "kid",
+    1,
+    4,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-5 days','+37 minutes'))",
+   "params": [
+    "perf-run-12-s5",
+    "perf-run-12",
+    "Shoes and coat",
+    "By the front door.",
+    "👟",
+    "{{child}}",
+    "everyone",
+    1,
+    5,
+    "done",
+    "{{child}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, started_at, completed_at, restricted) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days','+50 minutes'), ?)",
+   "params": [
+    "perf-run-13",
+    "perf-tpl-bedtime",
+    "Bedtime",
+    "{{date:-6}}",
+    "completed",
+    "{{partner}}",
+    "{{child2}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days','+5 minutes'))",
+   "params": [
+    "perf-run-13-s1",
+    "perf-run-13",
+    "Pajamas",
+    "Change clothes and put laundry away.",
+    "🌙",
+    "{{child2}}",
+    "kid",
+    1,
+    1,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days','+13 minutes'))",
+   "params": [
+    "perf-run-13-s2",
+    "perf-run-13",
+    "Bathroom",
+    "Brush teeth, wash face, use bathroom.",
+    "🚿",
+    10,
+    "{{child2}}",
+    "kid",
+    1,
+    2,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days','+21 minutes'))",
+   "params": [
+    "perf-run-13-s3",
+    "perf-run-13",
+    "Tomorrow prep",
+    "Choose clothes and pack backpack.",
+    "👟",
+    "{{child2}}",
+    "kid",
+    0,
+    3,
+    "done",
+    "{{child2}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days','+29 minutes'))",
+   "params": [
+    "perf-run-13-s4",
+    "perf-run-13",
+    "Read and lights out",
+    "Books, water, final goodnight.",
+    "📚",
+    20,
+    "{{partner}}",
+    "parent",
+    1,
+    4,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days','+37 minutes'))",
+   "params": [
+    "perf-run-13-s5",
+    "perf-run-13",
+    "Night light on",
+    "Door open a crack.",
+    "🌙",
+    "{{partner}}",
+    "parent",
+    0,
+    5,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, started_at, completed_at, restricted) VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days','+50 minutes'), ?)",
+   "params": [
+    "perf-run-14",
+    "perf-tpl-travel",
+    "Travel Departure",
+    "{{date:-9}}",
+    "completed",
+    "{{me}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days','+5 minutes'))",
+   "params": [
+    "perf-run-14-s1",
+    "perf-run-14",
+    "Documents and meds",
+    "IDs, tickets, medications, chargers.",
+    "🛂",
+    "{{me}}",
+    "adult",
+    1,
+    1,
+    "done",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days','+13 minutes'))",
+   "params": [
+    "perf-run-14-s2",
+    "perf-run-14",
+    "House check",
+    "Trash, thermostat, doors, windows, lights.",
+    "🏠",
+    "{{partner}}",
+    "adult",
+    1,
+    2,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days','+21 minutes'))",
+   "params": [
+    "perf-run-14-s3",
+    "perf-run-14",
+    "Bags loaded",
+    "Count bags and special items.",
+    "🧳",
+    "everyone",
+    1,
+    3,
+    "done",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days','+29 minutes'))",
+   "params": [
+    "perf-run-14-s4",
+    "perf-run-14",
+    "Final bathroom and water",
+    "Last stop before getting in the car.",
+    "💧",
+    "everyone",
+    0,
+    4,
+    "done",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-14-s5",
+    "perf-run-14",
+    "Lock up",
+    "Key under the usual pot for the neighbour.",
+    "🔒",
+    "{{me}}",
+    "adult",
+    1,
+    5,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, started_at, canceled_at, restricted) VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-11 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-11 days','+20 minutes'), ?)",
+   "params": [
+    "perf-run-15",
+    "perf-tpl-reset",
+    "Weekly Reset",
+    "{{date:-11}}",
+    "canceled",
+    "{{partner}}",
+    0
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-11 days','+5 minutes'))",
+   "params": [
+    "perf-run-15-s1",
+    "perf-run-15",
+    "Clear shared spaces",
+    "Kitchen counter, entryway, and living room.",
+    "🧹",
+    20,
+    "everyone",
+    1,
+    1,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-11 days','+13 minutes'))",
+   "params": [
+    "perf-run-15-s2",
+    "perf-run-15",
+    "Review calendar",
+    "Check events, rides, meals, and deadlines.",
+    "📅",
+    "{{me}}",
+    "adult",
+    1,
+    2,
+    "done",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-11 days','+21 minutes'))",
+   "params": [
+    "perf-run-15-s3",
+    "perf-run-15",
+    "Plan meals",
+    "Pick easy meals and add missing grocery items.",
+    "🍽️",
+    "{{partner}}",
+    "adult",
+    0,
+    3,
+    "done",
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-15-s4",
+    "perf-run-15",
+    "Laundry check",
+    "Start what is needed for Monday.",
+    "🧺",
+    "everyone",
+    0,
+    4,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__run_steps (id, run_id, title_snapshot, details_snapshot, icon_snapshot, assigned_member_id, role_label, required, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-run-15-s5",
+    "perf-run-15",
+    "Bins out",
+    "Recycling on odd weeks.",
+    "🗑️",
+    "{{child}}",
+    "kid",
+    1,
+    5,
+    "pending"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packets (id, template_id, run_id, title, safe_notes, include_contacts, include_health_notes, include_documents, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days','+0 minutes'))",
+   "params": [
+    "perf-packet-1",
+    "perf-tpl-sitter",
+    "perf-run-05",
+    "Saturday night with Priya",
+    "Leo has a nut allergy, the pen is in the top kitchen drawer. Bedtime is 8 for both.",
+    1,
+    1,
+    0,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-1-s1",
+    "perf-packet-1",
+    "perf-tpl-sitter-s1",
+    "Dinner",
+    "Pasta is in the fridge, no nuts for Leo.",
+    1
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-1-s2",
+    "perf-packet-1",
+    "perf-tpl-sitter-s2",
+    "Activities",
+    "Board games or one film, no tablets after 7.",
+    2
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-1-s3",
+    "perf-packet-1",
+    "perf-tpl-sitter-s3",
+    "Bedtime routine",
+    "Bathroom, pajamas, books, lights out.",
+    3
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-1-s4",
+    "perf-packet-1",
+    "perf-tpl-sitter-s4",
+    "House close-up",
+    "Doors locked, lights, pets, and parent update.",
+    4
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packets (id, template_id, title, safe_notes, include_contacts, include_health_notes, include_documents, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-14 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-14 days','+0 minutes'))",
+   "params": [
+    "perf-packet-2",
+    "perf-tpl-sitter",
+    "Grandma, half-term Tuesday",
+    "Help yourself to anything in the fridge. Mia has swimming at 4.",
+    1,
+    0,
+    0,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-2-s1",
+    "perf-packet-2",
+    "perf-tpl-sitter-s1",
+    "Dinner",
+    "Pasta is in the fridge, no nuts for Leo.",
+    1
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-2-s2",
+    "perf-packet-2",
+    "perf-tpl-sitter-s2",
+    "Activities",
+    "Board games or one film, no tablets after 7.",
+    2
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-2-s3",
+    "perf-packet-2",
+    "perf-tpl-sitter-s3",
+    "Bedtime routine",
+    "Bathroom, pajamas, books, lights out.",
+    3
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-2-s4",
+    "perf-packet-2",
+    "perf-tpl-sitter-s4",
+    "House close-up",
+    "Doors locked, lights, pets, and parent update.",
+    4
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packets (id, template_id, title, safe_notes, include_contacts, include_health_notes, include_documents, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-40 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-40 days','+0 minutes'))",
+   "params": [
+    "perf-packet-3",
+    "perf-tpl-petsitter",
+    "Dog care while we are at the lake",
+    "Vet is Parkside, number is on the fridge.",
+    1,
+    1,
+    1,
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-3-s1",
+    "perf-packet-3",
+    "perf-tpl-petsitter-s1",
+    "Food and water",
+    "One scoop each, bowls by the back door.",
+    1
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-3-s2",
+    "perf-packet-3",
+    "perf-tpl-petsitter-s2",
+    "Walk or litter",
+    "Round the park, bags on the lead.",
+    2
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-3-s3",
+    "perf-packet-3",
+    "perf-tpl-petsitter-s3",
+    "Medication",
+    "Half a tablet in cheese, evenings only.",
+    3
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-3-s4",
+    "perf-packet-3",
+    "perf-tpl-petsitter-s4",
+    "Update owner",
+    "Send photo or quick status note.",
+    4
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packets (id, template_id, title, safe_notes, include_contacts, include_health_notes, include_documents, created_by_member_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-55 days','+0 minutes'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-55 days','+0 minutes'))",
+   "params": [
+    "perf-packet-4",
+    "perf-tpl-bedtime",
+    "Bedtime for the cousins' sleepover",
+    "Leo sleeps with the door open.",
+    0,
+    0,
+    0,
+    "{{partner}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-4-s1",
+    "perf-packet-4",
+    "perf-tpl-bedtime-s1",
+    "Pajamas",
+    "Change clothes and put laundry away.",
+    1
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-4-s2",
+    "perf-packet-4",
+    "perf-tpl-bedtime-s2",
+    "Bathroom",
+    "Brush teeth, wash face, use bathroom.",
+    2
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-4-s3",
+    "perf-packet-4",
+    "perf-tpl-bedtime-s3",
+    "Tomorrow prep",
+    "Choose clothes and pack backpack.",
+    3
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_routines__caregiver_packet_steps (id, packet_id, source_step_id, title_snapshot, details_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+   "params": [
+    "perf-packet-4-s4",
+    "perf-packet-4",
+    "perf-tpl-bedtime-s4",
+    "Read and lights out",
+    "Books, water, final goodnight.",
+    4
+   ]
+  }
+ ]
+}
