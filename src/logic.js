@@ -118,7 +118,9 @@ export function completionSummary(steps) {
     skipped,
     required: required.length,
     doneRequired,
-    isComplete: required.length > 0 && doneRequired === required.length
+    // Nothing required means nothing stands in the way: a run of optional
+    // steps (or of none) could otherwise never be finished, only canceled.
+    isComplete: doneRequired === required.length
   };
 }
 
@@ -137,6 +139,38 @@ export function isRunSupervisor({ tenantKind = "household", isAdmin = false, adu
   return tenantKind === "household" ? adult === true : isAdmin === true;
 }
 
+/**
+ * Who may replace another member's template steps. That is the reach the
+ * template_steps and template_audience policies (`inherit_visibility` with
+ * `adults_bypass`) grant: every adult in a household, the admin (steward) in a
+ * shared space, and nobody in a co-parenting space, where one parent never
+ * overrules the other.
+ */
+export function isTemplateStepSupervisor({ tenantKind = "household", spaceKind = null, isAdmin = false, adult = false } = {}) {
+  if (tenantKind === "household") return adult === true;
+  return spaceKind !== "coparenting" && isAdmin === true;
+}
+
+/**
+ * Whether a member may archive a template. Archiving writes the template row
+ * alone, which its `owner_or_visibility` policy opens to the template's owner
+ * and to whoever supervises (the same reach as isRunSupervisor). For anyone
+ * else the hub narrows the write to nothing.
+ */
+export function canArchiveTemplate(template, member, tenant) {
+  return (!!member && template.owner_member_id === member.id) || isRunSupervisor(tenant);
+}
+
+/**
+ * Whether a member may edit a template. A save rewrites the template's steps
+ * as well as its row, so it needs the reach over both: the template's owner
+ * always has it (`parent_owner_actions`), and otherwise only someone who may
+ * replace another member's steps. A save from anyone else rolls back whole.
+ */
+export function canEditTemplate(template, member, tenant) {
+  return (!!member && template.owner_member_id === member.id) || isTemplateStepSupervisor(tenant);
+}
+
 export function canCompleteStep(step, member, supervisor = false) {
   if (!member) return true;
   if (supervisor) return true;
@@ -145,6 +179,61 @@ export function canCompleteStep(step, member, supervisor = false) {
   // An unassigned step has no owner, so the server narrows that write to zero
   // rows — don't show a Done button that silently does nothing.
   return !!step.assigned_member_id && step.assigned_member_id === member.id;
+}
+
+/**
+ * How the newest active runs and their steps are read at launch. A run stays
+ * active until an adult finishes or cancels it, and a household that works
+ * from the kiosk may never do either, so "every active run" grows without
+ * end and one day passes one of the hub's two ceilings on a reply: 5,000 rows,
+ * or 2 MB, which a step row of about half a kilobyte reaches first, near
+ * 4,000 rows. The read is then refused and nothing loads, the stale runs
+ * included. The newest ACTIVE_RUNS_SHOWN are read instead, and their steps
+ * newest run first, capped where that many runs at MAX_ROUTINE_STEPS each
+ * still fit whole (a run with some of its steps cut off would be judged on
+ * the wrong list) and the reply stays near half the byte ceiling. Step text
+ * has no length limit, so the page also survives this read being refused:
+ * see loadData. The same text is in manifest.preload.
+ */
+export const ACTIVE_RUNS_SHOWN = 25;
+export const ACTIVE_STEPS_READ = 2000;
+
+/**
+ * Closing the runs left open from earlier days: one guarded UPDATE per run. A
+ * run whose required steps are all done is completed, since only the Finish
+ * tap was missing; anything else is canceled. Each UPDATE matches an active
+ * run only, so one closed elsewhere meanwhile is left as it was.
+ */
+export function staleRuns(runs, today) {
+  return runs.filter((run) => run.status === "active" && !!run.run_date && run.run_date < today);
+}
+
+export function staleRunClosures(runs, runSteps, today, now) {
+  return staleRuns(runs, today).map((run) => {
+    const status = completionSummary(runSteps.filter((s) => s.run_id === run.id)).isComplete ? "completed" : "canceled";
+    return {
+      runId: run.id,
+      status,
+      completed_at: status === "completed" ? now : null,
+      canceled_at: status === "canceled" ? now : null,
+      statement: {
+        sql: "UPDATE app_routines__runs SET status=?, completed_at=?, canceled_at=? WHERE id=? AND status='active'",
+        params: [status, status === "completed" ? now : null, status === "canceled" ? now : null, run.id]
+      }
+    };
+  });
+}
+
+/**
+ * The choices the template editor offers for visibility. A template stored
+ * with a value outside the two on offer (an early version wrote "members")
+ * keeps it as a third choice: with no matching option the browser selected
+ * the first, and saving any edit made an owner-only routine visible to all.
+ */
+export function visibilityChoices(current) {
+  const choices = [["everyone", "Everyone"], ["adults", "Adults"]];
+  if (current && !choices.some(([value]) => value === current)) choices.push([current, "Only me"]);
+  return choices;
 }
 
 export function sortByOrder(rows) {
@@ -359,6 +448,25 @@ export function buildRun({ template, steps = [], runId, memberId, runDate, targe
   }
   statements.push(...multiRowInserts("app_routines__run_steps", RUN_STEP_COLUMNS, runSteps, (row) => RUN_STEP_COLUMNS.map((c) => row[c])));
   return { run, details, runSteps, statements };
+}
+
+const PACKET_COLUMNS = ["id", "template_id", "run_id", "title", "safe_notes", "include_contacts", "include_health_notes", "include_documents", "created_by_member_id", "created_at", "updated_at"];
+const PACKET_STEP_COLUMNS = ["id", "packet_id", "source_step_id", "title_snapshot", "details_snapshot", "sort_order"];
+
+/**
+ * The batch that saves a caregiver packet: the packet and a snapshot of every
+ * chosen step. One batch, so a packet is never stored with only some of its
+ * steps; a short one reads as complete, and it is what a sitter is sent.
+ */
+export function packetSaveStatements({ packet, stepRows = [] }) {
+  assertStepCount(stepRows.length);
+  return [
+    {
+      sql: `INSERT INTO app_routines__caregiver_packets (${PACKET_COLUMNS.join(",")}) VALUES (${PACKET_COLUMNS.map(() => "?").join(",")})`,
+      params: PACKET_COLUMNS.map((c) => packet[c])
+    },
+    ...multiRowInserts("app_routines__caregiver_packet_steps", PACKET_STEP_COLUMNS, stepRows, (row) => PACKET_STEP_COLUMNS.map((c) => row[c]))
+  ];
 }
 
 /**

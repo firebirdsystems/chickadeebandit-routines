@@ -113,7 +113,7 @@
       createShareHelper, activeShareLinks, SHARE_EXPIRY_CHOICES, DEFAULT_SHARE_EXPIRY_HOURS, glyph,
     } from "/hub-sdk.js";
     import { createShareUi, createOverlayView } from "./share.js";
-    import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, completionSummary, canCompleteStep, sortByOrder, visibleTemplates, searchableFields, templateSaveStatements, templateCreatePlan, MAX_BATCH_STATEMENTS, MAX_ROUTINE_STEPS, isRunSupervisor, buildRun, runDisplay, mayPublishRun, showRunTo } from "./logic.js";
+    import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, completionSummary, canCompleteStep, sortByOrder, visibleTemplates, searchableFields, templateSaveStatements, templateCreatePlan, packetSaveStatements, MAX_BATCH_STATEMENTS, MAX_ROUTINE_STEPS, isRunSupervisor, canArchiveTemplate, canEditTemplate, buildRun, runDisplay, mayPublishRun, showRunTo, staleRuns, staleRunClosures, visibilityChoices, ACTIVE_RUNS_SHOWN } from "./logic.js";
 
     const CONTEXT = window.__CONTEXT_URL ?? "";
     const DB = window.__DB_URL ?? "";
@@ -165,6 +165,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     let tab = "today";
     let modalEl = null;
     let bootError = "";
+    let stepsError = false;   // the active runs' steps could not be read; the runs themselves did load
 
     const demoAdult = { id: "demo-adult", name: "Morgan", role: "adult" };
     const demoChild = { id: "demo-child", name: "Avery", role: "child" };
@@ -174,6 +175,13 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     // reach, which in a shared space is the admin, not every adult. See
     // isRunSupervisor in logic.js.
     const userSupervisesRuns = () => !ME || isRunSupervisor({ tenantKind: window.__TENANT_KIND ?? "household", isAdmin: window.__IS_ADMIN === true, adult: userIsAdult() });
+
+    // Editing and archiving a template are for its owner and for whoever
+    // supervises; a co-parenting space has no supervisor over template steps.
+    // See canEditTemplate and canArchiveTemplate in logic.js.
+    const tenant = () => ({ tenantKind: window.__TENANT_KIND ?? "household", spaceKind: window.__SPACE_KIND ?? null, isAdmin: window.__IS_ADMIN === true, adult: userIsAdult() });
+    const userCanEditTemplate = (template) => !ME || canEditTemplate(template, currentMember(), tenant());
+    const userCanArchiveTemplate = (template) => !ME || canArchiveTemplate(template, currentMember(), tenant());
 
     function memberName(id, fallback = "Anyone") {
       if (!id) return fallback;
@@ -223,6 +231,22 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       }).catch(() => {});
     }
 
+    // One write at a time per key: a second tap while the first is in flight is
+    // dropped, and a failure is said out loud instead of leaving a button that
+    // appears to do nothing.
+    const inFlight = new Set();
+    async function once(key, action, failed = "Could not save that.", description = "Nothing was changed. Try again.") {
+      if (inFlight.has(key)) return;
+      inFlight.add(key);
+      try {
+        return await action();
+      } catch (err) {
+        hubAlert(failed, { description });
+      } finally {
+        inFlight.delete(key);
+      }
+    }
+
     async function loadMembers() {
       if (!CONTEXT) {
         members = [demoAdult, demoChild];
@@ -243,26 +267,35 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       // reached the "adult-only" notice renderPackets() draws for them. Skip
       // the read the way nest-egg does, and leave the arrays empty.
       const adult = userIsAdult();
+      stepsError = false;
       const [t, ts, r, rs, p, ps] = await Promise.all([
         db("SELECT * FROM app_routines__templates ORDER BY created_at DESC"),
         db("SELECT * FROM app_routines__template_steps ORDER BY sort_order ASC"),
         // Only the ACTIVE runs, for the same reason as their steps below: Today
         // is the landing tab and shows nothing else, while History is a tab the
-        // user has to ask for. loadHistoryRuns() fetches the rest on that first
+        // user has to ask for. loadHistory() fetches the recent rest on that first
         // open. A run that is completed or canceled in this session stays in the
         // array and shows up in History without a refetch.
         // LEFT JOIN run_details: a restricted run keeps its words there, under the
         // template's visibility. The policy lands on the ON clause, so a viewer
         // who may not read them still gets the run, with detail_* NULL.
-        db("SELECT r.*, d.title AS detail_title, d.caregiver_label AS detail_caregiver_label, d.notes AS detail_notes FROM app_routines__runs r LEFT JOIN app_routines__run_details d ON d.run_id = r.id WHERE r.status = 'active' ORDER BY r.started_at DESC"),
+        db(`SELECT r.*, d.title AS detail_title, d.caregiver_label AS detail_caregiver_label, d.notes AS detail_notes FROM app_routines__runs r LEFT JOIN app_routines__run_details d ON d.run_id = r.id WHERE r.status = 'active' ORDER BY r.started_at DESC LIMIT 25`),
         // Only the ACTIVE runs' steps. This table is the app's fastest grower —
         // a run per routine per day, several steps each, retained a year — and
         // the Today tab shows active runs only. History needs the rest, so it
-        // fetches them once when that tab is first opened (loadHistorySteps)
+        // fetches them once when that tab is first opened (loadHistory)
         // rather than making every launch pay for a year of them. A JOIN, not
         // IN (SELECT …): the rewriter fails closed on a governed table named
         // only inside a subquery, and this shape stays legal in roster mode.
-        db("SELECT s.* FROM app_routines__run_steps s JOIN app_routines__runs r ON r.id = s.run_id AND r.status = 'active' ORDER BY s.sort_order ASC"),
+        // Newest run first and capped, so the read stays under the hub's row
+        // ceiling however many runs were never finished. The numbers are
+        // ACTIVE_RUNS_SHOWN and ACTIVE_STEPS_READ in logic.js, written out because
+        // the manifest preloads this exact text.
+        // Its failure is survivable: the runs still load without their steps,
+        // which is what leaves the stale ones closable when this read is the
+        // one the hub refuses for size.
+        db(`SELECT s.* FROM app_routines__run_steps s JOIN app_routines__runs r ON r.id = s.run_id AND r.status = 'active' ORDER BY r.started_at DESC, s.sort_order ASC LIMIT 2000`)
+          .catch(() => { stepsError = true; return { rows: [] }; }),
         adult ? db("SELECT * FROM app_routines__caregiver_packets ORDER BY created_at DESC") : { rows: [] },
         adult ? db("SELECT * FROM app_routines__caregiver_packet_steps ORDER BY sort_order ASC") : { rows: [] }
       ]);
@@ -358,13 +391,25 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     function renderToday() {
       const active = runs.filter((r) => r.status === "active" && runShown(r));
       if (!active.length) return `<div class="empty">No active routines. Start one from a template when the day needs a little structure.</div>`;
-      return `<div class="grid">${active.map(renderRunCard).join("")}</div>`;
+      // Runs nobody finished pile up here and are gone from the kiosk, which
+      // shows today's only. Whoever supervises can close them in one go.
+      const stale = userSupervisesRuns() ? staleRuns(runs, hubToday()).length : 0;
+      const staleNote = stale ? `<div class="empty" data-testid="stale-runs"><p>${stale === ACTIVE_RUNS_SHOWN ? "Many routines" : `${stale} routine${stale === 1 ? "" : "s"}`} from earlier days ${stale === 1 ? "is" : "are"} still open.</p><div class="toolbar"><button onclick="closeStaleRuns()" data-testid="close-stale-runs">Close them</button></div></div>` : "";
+      // The launch read stops at the newest ACTIVE_RUNS_SHOWN; say so when it
+      // is full, since older ones are open but not on this page.
+      const cappedNote = runs.filter((r) => r.status === "active").length >= ACTIVE_RUNS_SHOWN
+        ? `<p class="muted" data-testid="active-capped">Showing the ${ACTIVE_RUNS_SHOWN} most recently started routines. Finish or cancel some to see older ones.</p>` : "";
+      const stepsNote = stepsError ? `<div class="empty" role="alert" data-testid="steps-error">The steps of these routines could not be loaded. Reload to try again.</div>` : "";
+      return `${staleNote}${stepsNote}<div class="grid">${active.map(renderRunCard).join("")}</div>${cappedNote}`;
     }
 
     function renderHistory() {
       const history = runs.filter((r) => r.status !== "active" && runShown(r));
-      if (!history.length) return `<div class="empty">Completed and canceled routines will show up here.</div>`;
-      return `<div class="stack">${history.map(renderRunCard).join("")}</div>`;
+      // A failed read is not an empty history: say so, above whatever this
+      // session already holds. Opening the tab again retries.
+      const failed = historyError ? `<div class="empty" role="alert" data-testid="history-error">Past routines could not be loaded. Open History again to retry.</div>` : "";
+      if (!history.length) return failed || `<div class="empty">Completed and canceled routines will show up here.</div>`;
+      return `${failed}<div class="stack">${history.map(renderRunCard).join("")}</div>${historyCapped ? `<p class="muted" data-testid="history-capped">Showing the latest ${HISTORY_RUNS} routines.</p>` : ""}`;
     }
 
     function runShown(run) {
@@ -376,19 +421,27 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       const shown = runDisplay(run);
       const summary = completionSummary(steps);
       const pct = summary.total ? Math.round((summary.done / summary.total) * 100) : 0;
+      // Only a run supervisor reads every step. Anyone else has just the steps
+      // assigned to them, so their progress is labelled as theirs and Finish,
+      // which needs the whole run's required steps, is not offered.
+      const supervises = userSupervisesRuns();
       return `
         <section class="card">
           <div class="row">
             <div>
               <h2 data-testid="run-title" data-run-id="${esc(run.id)}">${esc(shown.title ?? "Private routine")}</h2>
               <p class="muted">${esc(run.run_date)} · ${esc(memberName(run.target_member_id, "Everyone"))}${shown.caregiverLabel ? ` · ${esc(shown.caregiverLabel)}` : ""}</p>
+              ${shown.notes ? `<p class="muted" data-testid="run-notes">${esc(shown.notes)}</p>` : ""}
             </div>
             <span class="badge ${esc(run.status)}">${esc(run.status)}</span>
           </div>
-          <div class="progress" aria-label="${pct}% complete"><span style="--pct:${pct}%"></span></div>
-          <p class="muted">${summary.done}/${summary.total} done · ${summary.doneRequired}/${summary.required} required</p>
+          ${supervises
+            ? `<div class="progress" aria-label="${pct}% complete"><span style="--pct:${pct}%"></span></div>
+          <p class="muted">${summary.done}/${summary.total} done · ${summary.doneRequired}/${summary.required} required</p>`
+            : summary.total ? `<div class="progress" aria-label="${pct}% of your steps complete"><span style="--pct:${pct}%"></span></div>
+          <p class="muted" data-testid="own-progress">Your steps: ${summary.done}/${summary.total} done</p>` : ""}
           <div class="steps">${steps.map((step) => renderRunStep(run, step)).join("")}</div>
-          ${run.status === "active" && userIsAdult() ? `<div class="toolbar"><button onclick="completeRunIfReady('${sid(run.id)}')">Finish Routine</button><button class="danger" onclick="cancelRun('${sid(run.id)}')">Cancel</button></div>` : ""}
+          ${run.status === "active" && userIsAdult() ? `<div class="toolbar">${supervises ? `<button onclick="completeRunIfReady('${sid(run.id)}')">Finish Routine</button>` : ""}<button class="danger" onclick="cancelRun('${sid(run.id)}')">Cancel</button></div>` : ""}
         </section>
       `;
     }
@@ -439,7 +492,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
           </div>
           <p class="muted">${esc(template.category)} · ${steps.length} steps · ${esc(memberName(template.target_member_id, "Everyone"))}</p>
           <div class="steps">${steps.map((s) => `<div class="step"><div class="step-title">${esc(s.title)}</div><p class="muted">${esc(s.details || "")}</p></div>`).join("")}</div>
-          ${userIsAdult() ? `<div class="toolbar" data-testid="template-actions" data-template-id="${esc(template.id)}">${userSupervisesRuns() ? `<button onclick="openRunModal('${sid(template.id)}')" data-testid="template-start">Start</button>` : ""}<button onclick="openTemplateModal('${sid(template.id)}')" data-testid="template-edit">Edit</button><button onclick="openPacketModal('${sid(template.id)}')" data-testid="template-packet">Packet</button><button class="danger" onclick="archiveTemplate('${sid(template.id)}')" data-testid="template-archive">Archive</button></div>` : ""}
+          ${userIsAdult() ? `<div class="toolbar" data-testid="template-actions" data-template-id="${esc(template.id)}">${userSupervisesRuns() ? `<button onclick="openRunModal('${sid(template.id)}')" data-testid="template-start">Start</button>` : ""}${userCanEditTemplate(template) ? `<button onclick="openTemplateModal('${sid(template.id)}')" data-testid="template-edit">Edit</button>` : ""}<button onclick="openPacketModal('${sid(template.id)}')" data-testid="template-packet">Packet</button>${userCanArchiveTemplate(template) ? `<button class="danger" onclick="archiveTemplate('${sid(template.id)}')" data-testid="template-archive">Archive</button>` : ""}</div>` : ""}
         </section>
       `;
     }
@@ -484,39 +537,46 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     // so a double tap cannot start two reads; a failure clears it so the next
     // attempt retries. Both merges dedup by id: a run completed in this session
     // is already in the array, and so are the active runs' steps.
-    let historyStepsPromise = null;
-    function loadHistorySteps() {
+    //
+    // The latest HISTORY_RUNS past runs, then the steps of exactly those: a
+    // year of runs is retained, and reading every step of every one of them
+    // made the first open of this tab grow with the household's history. The
+    // cap also keeps the step read's id list under D1's 100 bound parameters.
+    const HISTORY_RUNS = 40;
+    let historyPromise = null;
+    let historyError = false;   // the last load failed: said on the tab, not shown as "none yet"
+    let historyCapped = false;  // more past runs exist than are shown
+    function loadHistory() {
       if (!DB) return Promise.resolve();
-      historyStepsPromise ??= db("SELECT * FROM app_routines__run_steps ORDER BY sort_order ASC")
-        .then((res) => {
-          const seen = new Set(runSteps.map((s) => s.id));
-          runSteps = [...runSteps, ...(res.rows ?? []).filter((s) => !seen.has(s.id))];
-        })
-        .catch((e) => { historyStepsPromise = null; throw e; });
-      return historyStepsPromise;
-    }
-
-    let historyRunsPromise = null;
-    function loadHistoryRuns() {
-      if (!DB) return Promise.resolve();
-      historyRunsPromise ??= db("SELECT r.*, d.title AS detail_title, d.caregiver_label AS detail_caregiver_label, d.notes AS detail_notes FROM app_routines__runs r LEFT JOIN app_routines__run_details d ON d.run_id = r.id WHERE r.status != 'active' ORDER BY r.started_at DESC")
-        .then((res) => {
-          const seen = new Set(runs.map((r) => r.id));
-          runs = [...runs, ...(res.rows ?? []).filter((r) => !seen.has(r.id))];
-        })
-        .catch((e) => { historyRunsPromise = null; throw e; });
-      return historyRunsPromise;
+      historyPromise ??= (async () => {
+        const past = (await db(`SELECT r.*, d.title AS detail_title, d.caregiver_label AS detail_caregiver_label, d.notes AS detail_notes FROM app_routines__runs r LEFT JOIN app_routines__run_details d ON d.run_id = r.id WHERE r.status != 'active' ORDER BY r.started_at DESC LIMIT ${HISTORY_RUNS}`)).rows ?? [];
+        const steps = past.length
+          ? (await db(`SELECT * FROM app_routines__run_steps WHERE run_id IN (${past.map(() => "?").join(",")}) ORDER BY sort_order ASC`, past.map((r) => r.id))).rows ?? []
+          : [];
+        // What was just read wins over what the page held: a run loaded as
+        // active and closed somewhere else since is a past run now, and keeping
+        // the older copy left it on Today and out of History.
+        const pastIds = new Set(past.map((r) => r.id));
+        runs = [...runs.filter((r) => !pastIds.has(r.id)), ...past];
+        const stepIds = new Set(steps.map((s) => s.id));
+        runSteps = [...runSteps.filter((s) => !stepIds.has(s.id)), ...steps];
+        historyCapped = past.length === HISTORY_RUNS;
+      })().catch((e) => { historyPromise = null; throw e; });
+      return historyPromise;
     }
 
     window.setTab = (next) => {
       tab = next;
       render();
       if (next === "history") {
-        Promise.all([loadHistoryRuns(), loadHistorySteps()]).then(render).catch(() => {});
+        historyError = false;
+        loadHistory().then(render).catch(() => { historyError = true; render(); });
       }
     };
 
     window.openTemplateModal = (templateId = "") => {
+      const existing = templateId ? templates.find((t) => t.id === templateId) : null;
+      if (existing && !userCanEditTemplate(existing)) return;
       const template = templates.find((t) => t.id === templateId) ?? {
         title: "", description: "", category: "household", visibility: "everyone", target_member_id: "", default_start_time: "", default_duration_minutes: 45
       };
@@ -527,7 +587,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
           <div class="form-grid">
             ${field("Title", "title", template.title)}
             ${field("Category", "category", template.category)}
-            ${selectField("Visibility", "visibility", template.visibility, [["everyone","Everyone"],["adults","Adults"]])}
+            ${selectField("Visibility", "visibility", template.visibility, visibilityChoices(template.visibility))}
             ${memberSelect("Target", "target_member_id", template.target_member_id)}
             ${field("Default time", "default_start_time", template.default_start_time, "time")}
             ${field("Minutes", "default_duration_minutes", template.default_duration_minutes, "number")}
@@ -539,7 +599,10 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
           <div class="modal-actions"><button type="button" onclick="closeModal()">Cancel</button><button class="primary">Save</button></div>
         </form>
       `);
-      document.getElementById("template-form").addEventListener("submit", (event) => saveTemplate(event, templateId));
+      document.getElementById("template-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        once("template", () => saveTemplate(event, templateId));
+      });
     };
 
     function field(label, name, value = "", type = "text") {
@@ -547,7 +610,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     }
 
     function selectField(label, name, value, options) {
-      return `<div class="field"><label>${label}</label><select name="${name}">${options.map(([v,l]) => `<option value="${v}" ${v === value ? "selected" : ""}>${l}</option>`).join("")}</select></div>`;
+      return `<div class="field"><label>${label}</label><select name="${name}">${options.map(([v,l]) => `<option value="${esc(v)}" ${v === value ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></div>`;
     }
 
     function memberSelect(label, name, value = "") {
@@ -562,6 +625,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       return `<div class="step-editor" data-step>
         <button type="button" class="step-icon" data-icon-button title="Pick a picture" onclick="toggleIconPicker(this)">${esc(icon || "＋")}</button>
         <input name="step_icon" type="hidden" value="${esc(icon)}">
+        <input name="step_role" type="hidden" value="${esc(step.role_label ?? "")}">
         <input name="step_title" placeholder="Step title" value="${esc(step.title ?? step.title_snapshot ?? "")}">
         <input name="step_details" placeholder="Details" value="${esc(step.details ?? step.details_snapshot ?? "")}">
         <input name="step_offset" type="number" placeholder="Minutes" value="${esc(step.suggested_offset_minutes ?? 0)}">
@@ -624,7 +688,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         suggested_offset_minutes: Number(el.querySelector('[name="step_offset"]').value || 0),
         timer_minutes: Number(el.querySelector('[name="step_timer"]').value) || null,
         assigned_member_id: el.querySelector('[name="step_member"]').value || null,
-        role_label: "",
+        role_label: el.querySelector('[name="step_role"]')?.value ?? "",
         required: el.querySelector('[name="step_required"]').checked ? 1 : 0,
         sort_order,
         created_at: now,
@@ -652,7 +716,8 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         });
       }
       if (templateId) {
-        templates = templates.map((t) => t.id === id ? { ...t, ...row } : t);
+        // The save does not move ownership, so the owner on screen stays put.
+        templates = templates.map((t) => t.id === id ? { ...t, ...row, owner_member_id: t.owner_member_id } : t);
         templateSteps = templateSteps.filter((s) => s.template_id !== id);
       } else {
         templates.unshift(row);
@@ -662,14 +727,29 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       render();
     }
 
-    window.installStarterTemplates = async () => {
+    // Guarded: installation skips a title that is already there, and a second
+    // tap would check before the first tap's inserts had landed.
+    window.installStarterTemplates = () => once("starters", async () => {
       try {
         for (const starter of STARTER_TEMPLATES) await createTemplateFromStarter(starter);
       } catch (err) {
+        // What is stored, not what this page believes: a template whose steps
+        // failed and whose removal also failed is there without them, and the
+        // next attempt skips a title only if it can see it.
+        await reloadTemplates().catch(() => {});
         hubAlert("Could not add every starter template.", { description: "The ones already added are kept. Try again to add the rest." });
       }
       render();
-    };
+    });
+
+    async function reloadTemplates() {
+      const [t, ts] = await Promise.all([
+        db("SELECT * FROM app_routines__templates ORDER BY created_at DESC"),
+        db("SELECT * FROM app_routines__template_steps ORDER BY sort_order ASC")
+      ]);
+      templates = t.rows ?? [];
+      templateSteps = ts.rows ?? [];
+    }
 
     // See templateCreatePlan: the template, then its steps as one batch, and the
     // template removed again if the steps do not land.
@@ -716,7 +796,21 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
           <div class="modal-actions"><button type="button" onclick="closeModal()">Cancel</button><button class="primary">Start</button></div>
         </form>
       `);
-      document.getElementById("run-form").addEventListener("submit", startRun);
+      const runForm = document.getElementById("run-form");
+      // "For" starts as the chosen template's member and follows the template
+      // until the adult picks someone. Left as first drawn, a run of another
+      // template went to the first one's member, and so did every step of it
+      // that names nobody.
+      let forChosen = false;
+      runForm.elements.target_member_id.addEventListener("change", () => { forChosen = true; });
+      runForm.elements.template_id.addEventListener("change", (event) => {
+        if (forChosen) return;
+        runForm.elements.target_member_id.value = templates.find((t) => t.id === event.target.value)?.target_member_id ?? "";
+      });
+      runForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        once("run", () => startRun(event));
+      });
     };
 
     async function startRun(event) {
@@ -732,7 +826,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         // failure never leaves a run with half its steps.
         built = buildRun({
           template, steps, runId: crypto.randomUUID(), memberId: currentMember().id,
-          runDate: form.get("run_date").toString(), targetMemberId: form.get("target_member_id").toString(),
+          runDate: form.get("run_date").toString() || hubToday(), targetMemberId: form.get("target_member_id").toString(),
           caregiverLabel: form.get("caregiver_label").toString(), notes: form.get("notes").toString(),
           now: new Date().toISOString(), stepId: () => crypto.randomUUID()
         });
@@ -755,28 +849,70 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       render();
     }
 
-    window.setStepStatus = async (stepId, status) => {
-      const step = runSteps.find((s) => s.id === stepId);
+    window.setStepStatus = (stepId, status) => once(`step:${stepId}`, () => setStepStatus(stepId, status), "Could not update this step.");
+
+    async function setStepStatus(stepId, status) {
+      let step = runSteps.find((s) => s.id === stepId);
       if (!step || !canCompleteStep(step, currentMember(), userSupervisesRuns())) return;
+      // Already there: writing it again would put this member's name and time
+      // over whoever did it, and announce a second completion.
+      if (step.status === status) return;
       const completedAt = status === "done" || status === "skipped" ? new Date().toISOString() : null;
       const completedBy = completedAt ? currentMember().id : null;
-      await db("UPDATE app_routines__run_steps SET status=?, completed_by_member_id=?, completed_at=? WHERE id=?", [status, completedBy, completedAt, stepId]);
+      // Matched on the status this page last saw. The page does not hear about
+      // a tick made on the kiosk or another phone, and writing over one put this
+      // member's name and time on a step someone else had already done.
+      const { changed } = await db("UPDATE app_routines__run_steps SET status=?, completed_by_member_id=?, completed_at=? WHERE id=? AND status=?", [status, completedBy, completedAt, stepId, step.status]);
+      // Found again: a re-read of the run's steps while this was out replaced
+      // the objects, and the answer belongs on the one the page now draws.
+      step = runSteps.find((s) => s.id === stepId) ?? step;
+      if (changed === 0) {
+        const fresh = ((await db("SELECT * FROM app_routines__run_steps WHERE id=?", [stepId])).rows ?? [])[0];
+        if (fresh) Object.assign(step, fresh);
+        // Nothing came back: the step is gone, or no longer this member's to read.
+        else runSteps = runSteps.filter((s) => s.id !== stepId);
+        render();
+        return fresh
+          ? hubAlert("This step was already updated somewhere else.", { description: "It now shows where it stands. Change it again if you still need to." })
+          : hubAlert("This step is no longer yours to update.", { description: "It was removed or given to someone else." });
+      }
       Object.assign(step, { status, completed_by_member_id: completedBy, completed_at: completedAt });
       const run = runs.find((r) => r.id === step.run_id);
       if (status === "done" && run && mayPublishRun(run)) publish("routine.step_completed", step.run_id, { step_id: step.id, title: step.title_snapshot });
       render();
-    };
+    }
 
-    window.completeRunIfReady = async (runId) => {
-      const steps = runSteps.filter((s) => s.run_id === runId);
-      const summary = completionSummary(steps);
-      if (!summary.isComplete) return hubAlert("Required steps are not finished yet.", { description: "Complete required steps before finishing the routine." });
+    // The whole of it under one guard, read included: a second tap used to start
+    // its own read, find the run just finished by the first, and report that
+    // someone else had closed it.
+    window.completeRunIfReady = (runId) => once(`finish:${runId}`, async () => {
+      // Readiness is judged on every step of the run, which only a supervisor reads.
+      if (!userSupervisesRuns()) return;
+      // On the steps as stored now: ticks made on the kiosk since this page
+      // loaded count, and without them Finish was refused until a reload. A
+      // read that fails decides nothing. Falling back to what the page held
+      // finished a run on no steps at all when those had never loaded.
+      if (DB) {
+        let fresh;
+        try {
+          fresh = (await db("SELECT * FROM app_routines__run_steps WHERE run_id=?", [runId])).rows ?? [];
+        } catch {
+          return hubAlert("Could not check this routine's steps.", { description: "Nothing was changed. Try again." });
+        }
+        runSteps = [...runSteps.filter((s) => s.run_id !== runId), ...fresh];
+      }
+      if (runs.find((r) => r.id === runId)?.status !== "active") return render();
+      const summary = completionSummary(runSteps.filter((s) => s.run_id === runId));
+      if (!summary.isComplete) {
+        render();
+        return hubAlert("Required steps are not finished yet.", { description: "Complete required steps before finishing the routine." });
+      }
       await setRunStatus(runId, "completed");
-    };
+    }, "Could not finish this routine.");
 
     window.cancelRun = async (runId) => {
       if (await hubConfirm({ message: "Cancel this routine?", confirmLabel: "Cancel Routine", destructive: true })) {
-        await setRunStatus(runId, "canceled");
+        await once(`run:${runId}`, () => setRunStatus(runId, "canceled"), "Could not cancel this routine.");
       }
     };
 
@@ -784,30 +920,120 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       const now = new Date().toISOString();
       const completedAt = status === "completed" ? now : null;
       const canceledAt = status === "canceled" ? now : null;
-      await db("UPDATE app_routines__runs SET status=?, completed_at=?, canceled_at=? WHERE id=?", [status, completedAt, canceledAt, runId]);
+      // An active run only. Another adult may have finished or canceled it
+      // since this page loaded, and that answer stands: writing over it turned
+      // a canceled run into a completed one and raised its completion alert.
+      const { changed } = await db("UPDATE app_routines__runs SET status=?, completed_at=?, canceled_at=? WHERE id=? AND status='active'", [status, completedAt, canceledAt, runId]);
       const run = runs.find((r) => r.id === runId);
+      if (changed === 0) {
+        const fresh = ((await db("SELECT status, completed_at, canceled_at FROM app_routines__runs WHERE id=?", [runId])).rows ?? [])[0];
+        if (fresh) Object.assign(run, fresh);
+        else runs = runs.filter((r) => r.id !== runId);   // removed altogether
+        render();
+        return fresh && fresh.status !== "active"
+          ? hubAlert("This routine was already closed somewhere else.", { description: "It has moved to History." })
+          : hubAlert(fresh ? "Could not update this routine." : "This routine is no longer there.", { description: fresh ? "Nothing was changed. Try again." : "It was removed since this page loaded." });
+      }
       Object.assign(run, { status, completed_at: completedAt, canceled_at: canceledAt });
       if (status === "completed" && mayPublishRun(run)) publish("routine.completed", runId, { title: run.title_snapshot });
       render();
     }
 
-    window.archiveTemplate = async (templateId) => {
-      if (!(await hubConfirm({ message: "Archive this template?", confirmLabel: "Archive" }))) return;
-      const now = new Date().toISOString();
-      await db("UPDATE app_routines__templates SET archived_at=?, updated_at=? WHERE id=?", [now, now, templateId]);
-      templates = templates.map((t) => t.id === templateId ? { ...t, archived_at: now, updated_at: now } : t);
+    // Every loaded run from an earlier day, in as few batches as the hub's
+    // statement cap allows. No completion events: these are closed in bulk,
+    // long after the fact, and each would raise an alert.
+    // The closures for the runs left open from earlier days, decided on the
+    // steps as stored NOW rather than as this page holds them: a run the kids
+    // finished on the kiosk since is finished, and a cancel cannot be taken
+    // back here. Throws when the steps cannot be read, so nothing is decided
+    // on a guess.
+    async function freshStaleClosures() {
+      const stale = staleRuns(runs, hubToday());
+      if (DB && stale.length) {
+        const fresh = (await db(`SELECT * FROM app_routines__run_steps WHERE run_id IN (${stale.map(() => "?").join(",")})`, stale.map((r) => r.id))).rows ?? [];
+        const staleIds = new Set(stale.map((r) => r.id));
+        runSteps = [...runSteps.filter((s) => !staleIds.has(s.run_id)), ...fresh];
+      }
+      return staleRunClosures(runs, runSteps, hubToday(), new Date().toISOString());
+    }
+
+    window.closeStaleRuns = async () => {
+      if (!userSupervisesRuns()) return;
+      const cannotCheck = () => hubAlert("Could not check those routines' steps.", { description: "Nothing was closed. Try again." });
+      let proposed;
+      try {
+        proposed = await freshStaleClosures();
+      } catch {
+        return cannotCheck();
+      }
+      if (!proposed.length) return;
+      const finished = proposed.filter((c) => c.status === "completed").length;
+      const ok = await hubConfirm({
+        message: `Close ${proposed.length} routine${proposed.length === 1 ? "" : "s"} from earlier days?`,
+        description: `${finished} with every required step done will be marked completed. The other ${proposed.length - finished} will be canceled.`,
+        confirmLabel: "Close them"
+      });
+      if (!ok) return;
+      await once("stale-runs", async () => {
+        // Decided again, after the question: the dialog can sit open while the
+        // kiosk is still being ticked, and what was counted before it opened
+        // would cancel a run that was finished in the meantime.
+        let closures;
+        try {
+          closures = await freshStaleClosures();
+        } catch {
+          return cannotCheck();
+        }
+        for (let i = 0; i < closures.length; i += MAX_BATCH_STATEMENTS) {
+          const part = closures.slice(i, i + MAX_BATCH_STATEMENTS);
+          await dbBatch(part.map((c) => c.statement));
+          for (const c of part) {
+            const run = runs.find((r) => r.id === c.runId);
+            if (run) Object.assign(run, { status: c.status, completed_at: c.completed_at, canceled_at: c.canceled_at });
+          }
+        }
+        // More may have been waiting behind the ones this page had loaded. The
+        // reload holds active runs only, so History is read again when asked.
+        await loadData();
+        historyPromise = null;
+        render();
+      }, "Could not close every routine.", "Some may have been closed. Reload to see which are left.");
       render();
     };
+
+    window.archiveTemplate = async (templateId) => {
+      const template = templates.find((t) => t.id === templateId);
+      if (!template || !userCanArchiveTemplate(template)) return;
+      if (!(await hubConfirm({ message: "Archive this template?", confirmLabel: "Archive" }))) return;
+      await once(`archive:${templateId}`, async () => {
+        const now = new Date().toISOString();
+        const { changed } = await db("UPDATE app_routines__templates SET archived_at=?, updated_at=? WHERE id=?", [now, now, templateId]);
+        // The hub answers 200 with nothing changed for a template this member may
+        // not write, so it is only shown as archived once a row really changed.
+        if (changed === 0) return hubAlert("Could not archive this template.", { description: "Only its owner or whoever supervises routines here can archive it." });
+        templates = templates.map((t) => t.id === templateId ? { ...t, archived_at: now, updated_at: now } : t);
+        render();
+      }, "Could not archive this template.");
+    };
+
+    // The step checklist and the suggested title belong to the chosen source
+    // template, so both are redrawn when the choice changes. Left as first
+    // drawn, a packet was saved under one template with another's steps.
+    const packetTitleFor = (templateId) => {
+      const template = templates.find((t) => t.id === templateId);
+      return template ? `${template.title} Instructions` : "Caregiver Instructions";
+    };
+    const packetStepChecks = (templateId) => sortByOrder(templateSteps.filter((s) => templateId && s.template_id === templateId))
+      .map((s) => `<label><input type="checkbox" name="step_id" value="${esc(s.id)}" checked> ${esc(s.title)}</label>`).join("");
 
     window.openPacketModal = (templateId = "") => {
       const options = visibleTemplates(templates);
       const chosen = templateId || options[0]?.id || "";
-      const steps = chosen ? sortByOrder(templateSteps.filter((s) => s.template_id === chosen)) : [];
       openModal(`
         <h2>Caregiver Packet</h2>
         <form id="packet-form">
           ${selectField("Source template", "template_id", chosen, options.map((t) => [t.id, t.title]))}
-          ${field("Packet title", "title", chosen ? `${templates.find((t) => t.id === chosen)?.title} Instructions` : "Caregiver Instructions")}
+          ${field("Packet title", "title", packetTitleFor(chosen))}
           <div class="field"><label>Safe notes</label><textarea name="safe_notes" placeholder="Only include information this caregiver should see."></textarea></div>
           <div class="form-grid">
             <label><input type="checkbox" name="include_contacts"> Include contacts reminder</label>
@@ -815,27 +1041,36 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
             <label><input type="checkbox" name="include_documents"> Include document reminder</label>
           </div>
           <label>Shared steps</label>
-          <div class="stack">${steps.map((s) => `<label><input type="checkbox" name="step_id" value="${esc(s.id)}" checked> ${esc(s.title)}</label>`).join("")}</div>
+          <div class="stack" id="packet-steps">${packetStepChecks(chosen)}</div>
           <div class="modal-actions"><button type="button" onclick="closeModal()">Cancel</button><button class="primary">Create Packet</button></div>
         </form>
       `);
-      document.getElementById("packet-form").addEventListener("submit", savePacket);
+      const form = document.getElementById("packet-form");
+      let suggestedTitle = packetTitleFor(chosen);
+      form.elements.template_id.addEventListener("change", (event) => {
+        const next = event.target.value;
+        document.getElementById("packet-steps").innerHTML = packetStepChecks(next);
+        // A title the adult typed is theirs; only the suggestion follows.
+        if (form.elements.title.value === suggestedTitle) form.elements.title.value = packetTitleFor(next);
+        suggestedTitle = packetTitleFor(next);
+      });
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        once("packet", () => savePacket(event), "Could not create this packet.");
+      });
     };
 
     async function savePacket(event) {
-      event.preventDefault();
       const form = new FormData(event.target);
       const now = new Date().toISOString();
-      const packet = { id: crypto.randomUUID(), template_id: form.get("template_id").toString() || null, run_id: null, title: form.get("title").toString().trim() || "Caregiver Instructions", safe_notes: form.get("safe_notes").toString(), include_contacts: form.has("include_contacts") ? 1 : 0, include_health_notes: form.has("include_health_notes") ? 1 : 0, include_documents: form.has("include_documents") ? 1 : 0, created_by_member_id: currentMember().id, created_at: now, updated_at: now };
-      await db("INSERT INTO app_routines__caregiver_packets (id,template_id,run_id,title,safe_notes,include_contacts,include_health_notes,include_documents,created_by_member_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", [packet.id,packet.template_id,packet.run_id,packet.title,packet.safe_notes,packet.include_contacts,packet.include_health_notes,packet.include_documents,packet.created_by_member_id,packet.created_at,packet.updated_at]);
-      packets.unshift(packet);
+      const packet = { id: crypto.randomUUID(), template_id: form.get("template_id")?.toString() || null, run_id: null, title: form.get("title").toString().trim() || "Caregiver Instructions", safe_notes: form.get("safe_notes").toString(), include_contacts: form.has("include_contacts") ? 1 : 0, include_health_notes: form.has("include_health_notes") ? 1 : 0, include_documents: form.has("include_documents") ? 1 : 0, created_by_member_id: currentMember().id, created_at: now, updated_at: now };
       const selected = new Set(form.getAll("step_id"));
-      const steps = sortByOrder(templateSteps.filter((s) => selected.has(s.id)));
-      for (const [sort_order, step] of steps.entries()) {
-        const row = { id: crypto.randomUUID(), packet_id: packet.id, source_step_id: step.id, title_snapshot: step.title, details_snapshot: step.details, sort_order };
-        await db("INSERT INTO app_routines__caregiver_packet_steps (id,packet_id,source_step_id,title_snapshot,details_snapshot,sort_order) VALUES (?,?,?,?,?,?)", [row.id,row.packet_id,row.source_step_id,row.title_snapshot,row.details_snapshot,row.sort_order]);
-        packetSteps.push(row);
-      }
+      const stepRows = sortByOrder(templateSteps.filter((s) => selected.has(s.id) && s.template_id === packet.template_id))
+        .map((step, sort_order) => ({ id: crypto.randomUUID(), packet_id: packet.id, source_step_id: step.id, title_snapshot: step.title, details_snapshot: step.details ?? "", sort_order }));
+      // The packet and its steps land together or not at all.
+      await dbBatch(packetSaveStatements({ packet, stepRows }));
+      packets.unshift(packet);
+      packetSteps.push(...stepRows);
       closeModal();
       tab = "packets";
       render();

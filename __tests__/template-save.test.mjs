@@ -109,7 +109,7 @@ describe("templateSaveStatements — a save that cannot reach the old steps is r
     }
     // The client passes the loaded row's value, not the new timestamp it writes.
     expect(client).toMatch(/const loadedUpdatedAt = templates\.find\(\(t\) => t\.id === id\)\?\.updated_at;\s*const statements = templateSaveStatements\(\{ templateId, row, loadedUpdatedAt,/);
-    expect(client).toMatch(/templates = templates\.map\(\(t\) => t\.id === id \? \{ \.\.\.t, \.\.\.row \} : t\);/);
+    expect(client).toMatch(/templates = templates\.map\(\(t\) => t\.id === id \? \{ \.\.\.t, \.\.\.row, owner_member_id: t\.owner_member_id \} : t\);/);
   });
 
   it("does not guard the DELETE when the template had no steps — zero is then correct", () => {

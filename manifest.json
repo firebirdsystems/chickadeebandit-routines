@@ -31,8 +31,8 @@
   "preload": {
     "templates": {"sql": "SELECT * FROM app_routines__templates ORDER BY created_at DESC"},
     "template_steps": {"sql": "SELECT * FROM app_routines__template_steps ORDER BY sort_order ASC"},
-    "runs": {"sql": "SELECT r.*, d.title AS detail_title, d.caregiver_label AS detail_caregiver_label, d.notes AS detail_notes FROM app_routines__runs r LEFT JOIN app_routines__run_details d ON d.run_id = r.id WHERE r.status = 'active' ORDER BY r.started_at DESC"},
-    "run_steps": {"sql": "SELECT s.* FROM app_routines__run_steps s JOIN app_routines__runs r ON r.id = s.run_id AND r.status = 'active' ORDER BY s.sort_order ASC"},
+    "runs": {"sql": "SELECT r.*, d.title AS detail_title, d.caregiver_label AS detail_caregiver_label, d.notes AS detail_notes FROM app_routines__runs r LEFT JOIN app_routines__run_details d ON d.run_id = r.id WHERE r.status = 'active' ORDER BY r.started_at DESC LIMIT 25"},
+    "run_steps": {"sql": "SELECT s.* FROM app_routines__run_steps s JOIN app_routines__runs r ON r.id = s.run_id AND r.status = 'active' ORDER BY r.started_at DESC, s.sort_order ASC LIMIT 2000"},
     "caregiver_packets": {"sql": "SELECT * FROM app_routines__caregiver_packets ORDER BY created_at DESC"},
     "caregiver_packet_steps": {"sql": "SELECT * FROM app_routines__caregiver_packet_steps ORDER BY sort_order ASC"}
   },
