@@ -75,6 +75,8 @@
     .icon-picker button { font-size: 1.2rem; padding: 4px 7px; line-height: 1; }
     .icon-picker .icon-clear { font-size: .78rem; }
     .empty { padding: 24px; text-align: center; color: var(--hub-text-muted, #6b7280); border: 1px dashed var(--hub-border, #d1d5db); border-radius: 8px; background: var(--hub-surface, #fff); }
+    .load-error { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: var(--hub-tint-danger, #fee2e2); color: var(--hub-tint-danger-fg, #b91c1c); font-size: 0.9rem; display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+    .load-error-retry { background: none; border: 1px solid currentColor; border-radius: 8px; padding: 5px 10px; font: inherit; font-weight: 600; color: inherit; cursor: pointer; flex-shrink: 0; }
     .modal-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
     .modal { background: var(--hub-surface, #fff); border-radius: 10px; width: min(760px, 100%); max-height: 92vh; overflow: auto; padding: 18px; }
     .modal h2 { margin-bottom: 12px; font-size: 1.15rem; }
@@ -164,7 +166,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     let packetSteps = [];
     let tab = "today";
     let modalEl = null;
-    let bootError = "";
+    let loadFailed = false; // first load failed; cleared when a load succeeds
     let stepsError = false;   // the active runs' steps could not be read; the runs themselves did load
 
     const demoAdult = { id: "demo-adult", name: "Morgan", role: "adult" };
@@ -195,8 +197,8 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sql, params })
       });
-      const json = await res.json();
-      if (!res.ok || json.error) throw new Error(json.error || "Database request failed");
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json || typeof json !== "object" || json.error) throw new Error(json?.error || "Database request failed");
       return json;
     }
 
@@ -217,8 +219,8 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ statements })
       });
-      const json = await res.json();
-      if (!res.ok || json.error) throw new Error(json.error || "Database request failed");
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json || typeof json !== "object" || json.error) throw new Error(json?.error || "Database request failed");
       return json.results ?? [];
     }
 
@@ -252,7 +254,12 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         members = [demoAdult, demoChild];
       } else {
         const res = await fetch(`${CONTEXT}?keys=family.members,family.groups,family.documents`);
+        // A roster that could not be read is a failed load, not an empty household.
+        if (!res.ok) throw new Error(`context ${res.status}`);
         const ctx = await res.json();
+        if (!ctx || typeof ctx !== "object") throw new Error("context: unexpected response");
+        // The hub answers 200 and names a key it could not resolve in `$errors`.
+        if (Array.isArray(ctx.$errors) && ctx.$errors.includes("family.members")) throw new Error("context: family.members did not resolve");
         members = ctx["family.members"] ?? [];
       }
       memberMap = new Map(members.map((m) => [m.id, m]));
@@ -374,17 +381,17 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
             <p class="muted">Reusable playbooks for household flow and share-safe caregiver instructions.</p>
           </div>
           <div class="toolbar">
-            ${userIsAdult() ? `<button class="primary" onclick="openTemplateModal()" data-testid="new-template">New Template</button>` : ""}${userSupervisesRuns() ? `<button onclick="openRunModal()" data-testid="start-routine">Start Routine</button>` : ""}
+            ${loadFailed ? "" : `${userIsAdult() ? `<button class="primary" onclick="openTemplateModal()" data-testid="new-template">New Template</button>` : ""}${userSupervisesRuns() ? `<button onclick="openRunModal()" data-testid="start-routine">Start Routine</button>` : ""}`}
           </div>
         </header>
         <nav class="tabs">
           ${["today", "templates", "packets", "history"].map((key) => `<button class="tab ${tab === key ? "active" : ""}" onclick="setTab('${key}')" data-testid="tab-${key}">${key[0].toUpperCase() + key.slice(1)}</button>`).join("")}
         </nav>
-        ${bootError ? `<div class="empty">${esc(bootError)}</div>` : ""}
-        ${tab === "today" ? renderToday() : ""}
-        ${tab === "templates" ? renderTemplates() : ""}
-        ${tab === "packets" ? renderPackets() : ""}
-        ${tab === "history" ? renderHistory() : ""}
+        ${loadFailed ? `<div class="load-error" data-testid="load-error" role="alert"><span>Couldn’t load routines.</span> <button type="button" class="load-error-retry" data-testid="load-retry">Try again</button></div>` : ""}
+        ${loadFailed ? "" : tab === "today" ? renderToday() : ""}
+        ${loadFailed ? "" : tab === "templates" ? renderTemplates() : ""}
+        ${loadFailed ? "" : tab === "packets" ? renderPackets() : ""}
+        ${loadFailed ? "" : tab === "history" ? renderHistory() : ""}
       `;
     }
 
@@ -1099,16 +1106,22 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       `);
     };
 
-    try {
-      await loadMembers();
-      await loadData();
-    } catch (err) {
-      // A failed load must not leave the frame empty: render what did arrive
-      // and say why the rest is missing. This IIFE had no catch, so one
-      // rejected query took the whole app down before its first paint.
-      bootError = err?.message || "Something went wrong loading this app.";
+    async function firstLoad() {
+      try {
+        await loadMembers();
+        await loadData();
+        loadFailed = false;
+      } catch {
+        // A failed load must not leave the frame empty: draw the shell and say
+        // the routines could not be read, rather than showing them as none.
+        loadFailed = true;
+      }
+      render();
     }
-    render();
+    document.addEventListener("click", (e) => {
+      if (e.target.closest('[data-testid="load-retry"]')) firstLoad();
+    });
+    await firstLoad();
   </script>
 </body>
 </html>
