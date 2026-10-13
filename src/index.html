@@ -715,7 +715,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
           const statements = templateSaveStatements({ templateId, row, loadedUpdatedAt, doomedStepIds, stepRows, memberId: currentMember().id });
           await dbBatch(statements);
         } else {
-          await createTemplate(templateCreatePlan({ row, stepRows, memberId: currentMember().id }));
+          await dbBatch(templateCreatePlan({ row, stepRows, memberId: currentMember().id }));
         }
       } catch (err) {
         return hubAlert("Could not save this template.", {
@@ -740,9 +740,9 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       try {
         for (const starter of STARTER_TEMPLATES) await createTemplateFromStarter(starter);
       } catch (err) {
-        // What is stored, not what this page believes: a template whose steps
-        // failed and whose removal also failed is there without them, and the
-        // next attempt skips a title only if it can see it.
+        // What is stored, not what this page believes: a create whose answer
+        // was lost may have landed, and the next attempt skips a title only if
+        // it can see it.
         await reloadTemplates().catch(() => {});
         hubAlert("Could not add every starter template.", { description: "The ones already added are kept. Try again to add the rest." });
       }
@@ -758,19 +758,6 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       templateSteps = ts.rows ?? [];
     }
 
-    // See templateCreatePlan: the template, then its steps as one batch, and the
-    // template removed again if the steps do not land.
-    async function createTemplate(plan) {
-      await dbBatch([plan.create]);
-      if (!plan.steps.length) return;
-      try {
-        await dbBatch(plan.steps);
-      } catch (err) {
-        await dbBatch([plan.undo]).catch(() => {});
-        throw err;
-      }
-    }
-
     async function createTemplateFromStarter(starter) {
       if (templates.some((t) => t.title === starter.title && !t.archived_at)) return;
       const now = new Date().toISOString();
@@ -778,10 +765,11 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       const target = starter.category === "kids" ? members.find((m) => m.role === "child")?.id ?? null : null;
       const row = { id, title: starter.title, description: starter.description, category: starter.category, visibility: "everyone", owner_member_id: currentMember().id, target_member_id: target, default_start_time: starter.default_start_time, default_duration_minutes: 45, archived_at: null, created_at: now, updated_at: now };
       const stepRows = starter.steps.map((step, sort_order) => ({ id: crypto.randomUUID(), template_id: id, title: step[0], details: step[1], suggested_offset_minutes: step[2], assigned_member_id: step[3] === "kid" ? target : null, role_label: step[3], required: step[4] ? 1 : 0, icon: step[5] ?? "", timer_minutes: null, sort_order, created_by_member_id: currentMember().id, created_at: now, updated_at: now }));
-      // A starter arrives whole or not at all: one statement at a time left a
-      // half-built routine that looks installed, and installStarterTemplates
-      // then skips it on the next attempt (it dedupes on the title).
-      await createTemplate(templateCreatePlan({ row, stepRows, memberId: currentMember().id }));
+      // A starter arrives whole or not at all (one batch, see
+      // templateCreatePlan): a half-built routine looks installed, and
+      // installStarterTemplates then skips it on the next attempt (it dedupes
+      // on the title).
+      await dbBatch(templateCreatePlan({ row, stepRows, memberId: currentMember().id }));
       templates.unshift({ id, title: starter.title, description: starter.description, category: starter.category, visibility: "everyone", owner_member_id: currentMember().id, target_member_id: target, default_start_time: starter.default_start_time, default_duration_minutes: 45, archived_at: null, created_at: now, updated_at: now });
       templateSteps.push(...stepRows);
     }

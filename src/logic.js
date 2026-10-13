@@ -360,28 +360,25 @@ function stepInserts(stepRows, memberId) {
 }
 
 /**
- * Creating a template takes TWO requests, not one batch. The step tables are
- * `inherit_visibility`, and the hub checks that each inserted step's template is
- * visible to the caller by reading D1 BEFORE the batch runs — so a batch that
- * inserts the template and its steps together is always refused ("Referenced
- * templates … is not visible to this member"). New Template and Add Starter
- * Templates both sent exactly that batch, and both failed every time.
+ * The ONE batch that creates a template: the template row FIRST, then its
+ * steps. The step tables are `inherit_visibility`, and the hub judges each
+ * inserted step's template inside the batch's transaction, so a step may
+ * follow its new template as long as the template's INSERT comes before it.
  *
- * So the template goes first, on its own, then every step in one batch. If the
- * steps fail, `undo` removes the template again, so a failed create does not
- * leave a stepless routine behind (and a starter can be retried: installation
- * skips a title that already exists).
+ * One transaction, so a failed create leaves nothing behind — no stepless
+ * routine, and a starter can be retried (installation skips a title that
+ * already exists). The largest create is 1 + ceil(MAX_ROUTINE_STEPS /
+ * ROWS_PER_INSERT) statements, inside MAX_BATCH_STATEMENTS.
  */
 export function templateCreatePlan({ row, stepRows = [], memberId }) {
   assertStepCount(stepRows.length);
-  return {
-    create: {
+  return [
+    {
       sql: "INSERT INTO app_routines__templates (id,title,description,category,visibility,owner_member_id,target_member_id,default_start_time,default_duration_minutes,archived_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
       params: [row.id, row.title, row.description, row.category, row.visibility, row.owner_member_id, row.target_member_id, row.default_start_time, row.default_duration_minutes, row.archived_at, row.created_at, row.updated_at]
     },
-    steps: stepInserts(stepRows, memberId),
-    undo: { sql: "DELETE FROM app_routines__templates WHERE id=?", params: [row.id] }
-  };
+    ...stepInserts(stepRows, memberId)
+  ];
 }
 
 /**

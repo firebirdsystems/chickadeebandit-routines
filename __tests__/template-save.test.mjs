@@ -22,10 +22,9 @@
  * 6. Two open editors both passed the UPDATE guard, which matched the id
  *    alone, so the later save replaced the earlier one's title and steps. The
  *    UPDATE now also matches the updated_at the editor loaded.
- * 5. A NEW template and its steps went as one batch, which the hub always
- *    refuses: it checks each step's template is visible by reading D1 before the
- *    batch runs, when the template does not exist yet. The template now goes
- *    first on its own, then the steps, with an undo if the steps fail.
+ * 5. A NEW template and its steps went as two requests (the template, then
+ *    its steps, with an undo if the steps failed), so a failure between them
+ *    could leave a template without steps. They are one batch, template first.
  */
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
@@ -137,7 +136,7 @@ describe("templateSaveStatements — a save that cannot reach the old steps is r
   });
 
   it("puts several steps in each INSERT, with one tuple per row and every parameter bound", () => {
-    const { steps } = templateCreatePlan({ row, stepRows: Array.from({ length: 13 }, (_, i) => step(`s-${i}`, i)), memberId: "a2" });
+    const [, ...steps] = templateCreatePlan({ row, stepRows: Array.from({ length: 13 }, (_, i) => step(`s-${i}`, i)), memberId: "a2" });
     expect(steps.map((st) => st.params.length / 14)).toEqual([ROWS_PER_INSERT, ROWS_PER_INSERT, 1]);
     for (const st of steps) expect((st.sql.match(/\?/g) ?? []).length).toBe(st.params.length);
   });
@@ -149,23 +148,32 @@ describe("templateSaveStatements — a save that cannot reach the old steps is r
     expect(client).toMatch(/if \(stepRows\.length > MAX_ROUTINE_STEPS\)/);
   });
 
-  it("creates a new template first, on its own, then every step in one batch, with an undo", () => {
+  it("creates a new template and its steps as ONE batch, the template's INSERT first", () => {
     const plan = templateCreatePlan({ row, stepRows: [step("s-1", 0), step("s-2", 1)], memberId: "a2" });
-    expect(plan.create.sql).toMatch(/^INSERT INTO app_routines__templates /);
-    expect(plan.steps.map((st) => st.sql.split(" (")[0])).toEqual(["INSERT INTO app_routines__template_steps"]);
-    expect([plan.create, ...plan.steps].some((st) => st.requireChanges)).toBe(false);
-    expect(plan.undo).toEqual({ sql: "DELETE FROM app_routines__templates WHERE id=?", params: ["t-1"] });
-    const cols = plan.steps[0].sql.match(/\(([^)]*)\) VALUES/)[1].split(",");
-    expect(plan.steps[0].params.length).toBe(cols.length * 2);
-    for (let r = 0; r < 2; r++) expect(plan.steps[0].params[r * cols.length + cols.indexOf("created_by_member_id")]).toBe("a2");
-    // An edit builder that silently accepted a new template would bring the
-    // one-batch create back.
+    expect(plan.map((st) => st.sql.split(" (")[0])).toEqual(["INSERT INTO app_routines__templates", "INSERT INTO app_routines__template_steps"]);
+    expect(plan[0].params[0]).toBe("t-1");
+    // requireChanges is for UPDATE/DELETE only.
+    expect(plan.some((st) => st.requireChanges)).toBe(false);
+    const cols = plan[1].sql.match(/\(([^)]*)\) VALUES/)[1].split(",");
+    expect(plan[1].params.length).toBe(cols.length * 2);
+    for (let r = 0; r < 2; r++) expect(plan[1].params[r * cols.length + cols.indexOf("created_by_member_id")]).toBe("a2");
+    // A template with no steps is still one (single-statement) batch.
+    expect(templateCreatePlan({ row, stepRows: [], memberId: "a2" })).toHaveLength(1);
+    // The edit builder guards an UPDATE; it is not a way to create.
     expect(() => templateSaveStatements({ row, stepRows: [], memberId: "a2" })).toThrow(TypeError);
   });
 
-  it("the client sends the create in two requests and undoes the template when its steps fail", () => {
-    expect(client).toMatch(/await dbBatch\(\[plan\.create\]\);\s*if \(!plan\.steps\.length\) return;\s*try \{\s*await dbBatch\(plan\.steps\);\s*\} catch \(err\) \{\s*await dbBatch\(\[plan\.undo\]\)\.catch\(\(\) => \{\}\);\s*throw err;/);
-    expect(client.match(/await createTemplate\(templateCreatePlan\(/g)).toHaveLength(2);
+  it("fits the largest allowed create in ONE batch, under D1's 100-parameter statement limit", () => {
+    const plan = templateCreatePlan({ row, stepRows: Array.from({ length: MAX_ROUTINE_STEPS }, (_, i) => step(`s-${i}`, i)), memberId: "a2" });
+    expect(plan.length).toBeLessThanOrEqual(MAX_BATCH_STATEMENTS);
+    for (const st of plan) expect(st.params.length, st.sql.slice(0, 40)).toBeLessThanOrEqual(90);
+    expect(plan.slice(1).flatMap((st) => st.params.filter((_, i) => i % 14 === 0))).toEqual(Array.from({ length: MAX_ROUTINE_STEPS }, (_, i) => `s-${i}`));
+  });
+
+  it("the client sends the create as one request, with no second write to undo", () => {
+    expect(client.match(/await dbBatch\(templateCreatePlan\(/g)).toHaveLength(2);
+    expect(client).not.toMatch(/createTemplate\(/);
+    expect(client).not.toMatch(/plan\.(create|steps|undo)/);
   });
 
   it("the client surfaces a refused save instead of leaving the dialog silently open", () => {
