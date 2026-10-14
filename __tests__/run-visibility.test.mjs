@@ -129,7 +129,7 @@ describe("manifest and migration 005", () => {
       kind: "owner_or_visibility", member_column: "started_by_member_id", visibility_column: "visibility",
       everyone_values: policies.templates.everyone_values, adult_values: policies.templates.adult_values
     });
-    expect(policies.runs.retain_days.dependent_tables).toContainEqual({ table: "run_details", foreign_key: "run_id" });
+    expect(manifest.retention.runs.dependent_tables).toContainEqual({ table: "run_details", foreign_key: "run_id" });
     expect(manifest.member_references.run_details).toEqual([{ column: "started_by_member_id", on_removed: "keep" }]);
   });
 
