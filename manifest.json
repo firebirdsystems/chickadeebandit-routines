@@ -155,16 +155,7 @@
       "parent_owner_actions": ["update", "delete"]
     },
     "runs": {
-      "kind": "adult_writable",
-      "retain_days": {
-        "default": 365,
-        "timestamp_column": "started_at",
-        "override_key": "run_history",
-        "dependent_tables": [
-          { "table": "run_steps", "foreign_key": "run_id" },
-          { "table": "run_details", "foreign_key": "run_id" }
-        ]
-      }
+      "kind": "adult_writable"
     },
     "run_details": {
       "kind": "owner_or_visibility",
@@ -183,6 +174,17 @@
     },
     "caregiver_packet_steps": {
       "kind": "adult_only"
+    }
+  },
+  "retention": {
+    "runs": {
+      "default": 365,
+      "timestamp_column": "started_at",
+      "override_key": "run_history",
+      "dependent_tables": [
+        { "table": "run_steps", "foreign_key": "run_id" },
+        { "table": "run_details", "foreign_key": "run_id" }
+      ]
     }
   },
   "shareable": {
@@ -269,9 +271,6 @@
       "label": "routines in progress",
       "severity": "info"
     }
-  },
-  "resource_limits": {
-    "max_db_bytes": 52428800
   },
   "icon": "\ud83e\udded"
 }
