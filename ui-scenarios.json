@@ -190,6 +190,105 @@
           "selector": "[data-testid=\"start-routine\"]"
         }
       ]
+    },
+    {
+      "name": "a guest starts a run of an everyone template, ticks a step, and is offered Finish",
+      "members": {
+        "parent": "adult",
+        "sitter": "guest"
+      },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__templates (id, title, category, visibility, owner_member_id, created_at, updated_at) VALUES ('ui-t3', ?, 'household', 'everyone', ?, datetime('now'), datetime('now'))",
+          "params": [
+            "Bedtime",
+            "{{parent}}"
+          ]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, sort_order, required, created_at, updated_at) VALUES ('ui-s3a', 'ui-t3', ?, 1, 1, datetime('now'), datetime('now'))",
+          "params": [
+            "Brush teeth"
+          ]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, sort_order, required, created_at, updated_at) VALUES ('ui-s3b', 'ui-t3', ?, 2, 1, datetime('now'), datetime('now'))",
+          "params": [
+            "Read a story"
+          ]
+        },
+        {
+          "action": "open",
+          "as": "sitter"
+        },
+        {
+          "action": "expectVisible",
+          "as": "sitter",
+          "selector": "[data-testid=\"start-routine\"]"
+        },
+        {
+          "action": "expectCount",
+          "as": "sitter",
+          "selector": "[data-testid=\"new-template\"]",
+          "count": 0
+        },
+        {
+          "action": "click",
+          "as": "sitter",
+          "selector": "[data-testid=\"start-routine\"]"
+        },
+        {
+          "action": "expectVisible",
+          "as": "sitter",
+          "selector": "#run-form button.primary"
+        },
+        {
+          "action": "click",
+          "as": "sitter",
+          "selector": "#run-form button.primary"
+        },
+        {
+          "action": "expectText",
+          "as": "sitter",
+          "text": "Bedtime",
+          "selector": "[data-testid=\"run-title\"]"
+        },
+        {
+          "action": "expectCount",
+          "as": "sitter",
+          "selector": "[data-testid=\"step-done\"]",
+          "count": 2
+        },
+        {
+          "action": "click",
+          "as": "sitter",
+          "selector": ".steps > .step:nth-child(1) [data-testid=\"step-done\"]"
+        },
+        {
+          "action": "expectText",
+          "as": "sitter",
+          "text": "1/2 done"
+        },
+        {
+          "action": "expectCount",
+          "as": "sitter",
+          "selector": "[data-testid=\"own-progress\"]",
+          "count": 0
+        },
+        {
+          "action": "expectVisible",
+          "as": "sitter",
+          "selector": "[data-testid=\"finish-run\"]"
+        },
+        {
+          "action": "expectVisible",
+          "as": "sitter",
+          "selector": "[data-testid=\"cancel-run\"]"
+        }
+      ]
     }
   ]
 }

@@ -130,13 +130,75 @@ export function completionSummary(steps) {
  * adult in a household, but only the admin (steward) in a shared space, where
  * the hub resolves supervision from `isAdmin` rather than from the adult role.
  *
- * Starting a run is gated on it, not on being an adult. A non-admin adult in a
- * space passes the runs table (`adult_writable`) but not run_steps, and the hub
- * rewrites the assignee of every step such a caller inserts to the caller — so
- * the run looked right until reload, then every step belonged to the starter.
+ * Ticking anyone's step is gated on it, not on being an adult. The hub
+ * rewrites the assignee of every run step a non-supervisor inserts to the
+ * caller, which is why buildRun assigns a non-supervisor's steps to the
+ * starter up front (see canStartRun).
  */
 export function isRunSupervisor({ tenantKind = "household", isAdmin = false, adult = false } = {}) {
   return tenantKind === "household" ? adult === true : isAdmin === true;
+}
+
+/**
+ * Someone the family employs — a nanny, a sitter — signs in as a GUEST of the
+ * household: a named login with an end date. The hub treats a guest as a
+ * member who is not an adult.
+ */
+export function isGuest(member) {
+  return !!member && member.role === "guest";
+}
+
+/**
+ * Who the page offers Start to: whoever supervises runs, and a guest, who
+ * holds the evening and needs bedtime started and ticked. A child keeps a
+ * read-only card. This is what the page OFFERS, not what the hub allows: the
+ * runs policy (`owner_or_visibility`) lets any member who can see a template
+ * insert a run of it, stamped with who started it.
+ *
+ * A non-supervisor's run belongs to them whole: the hub forces every run
+ * step they insert to themselves (run_steps is `owner_only`), so buildRun
+ * assigns the steps to the starter and the page shows what is stored.
+ */
+export function canStartRun(member, tenant) {
+  return isRunSupervisor(tenant) || isGuest(member);
+}
+
+/**
+ * What the viewer may do with a run, decided in one place for the card and
+ * the Finish handler alike.
+ *
+ * - `seesWhole`: the steps they read are all of the run's. A supervisor reads
+ *   every run step; anyone else only the steps assigned to them (run_steps is
+ *   `owner_only`), and those are the whole run only when they number the
+ *   `step_count` frozen at the start. The whole-run progress label follows it.
+ *   A run recorded with no count (`step_count` 0: a run inserted without it)
+ *   is never whole to another non-supervisor, who would otherwise match 0
+ *   with 0. Its starter is the exception when she reads no steps and the run
+ *   was started with none: every step of a non-supervisor's run is hers
+ *   (buildRun assigns them all to her), so a template with no steps leaves
+ *   her a run she can still finish.
+ * - `mayClose`: the runs policy (`write_visibility_scoped`, with every column
+ *   writable by an adult or the row's owner) lets any adult write any run they
+ *   read — a co-parent or a participant in a general space included — and a
+ *   child or guest only the runs they started. A roster space narrows a
+ *   non-steward's writes to their own rows, so there only the steward and the
+ *   starter close a run. Cancel follows it.
+ * - `mayFinish`: closing, judged on the steps, so it needs the whole run too.
+ */
+export function runAccess(run, member, tenant, visibleSteps) {
+  const stepCount = Number(run.step_count ?? 0);
+  const isStarter = !!member && run.started_by_member_id === member.id;
+  const seesWhole = isRunSupervisor(tenant)
+    || (stepCount > 0 && visibleSteps.length === stepCount)
+    || (isStarter && stepCount === 0 && visibleSteps.length === 0);
+  const mayClose = mayCloseRun(run, member, tenant);
+  return { seesWhole, mayClose, mayFinish: mayClose && seesWhole };
+}
+
+/** runAccess's `mayClose` alone: it does not depend on the steps. */
+export function mayCloseRun(run, member, tenant) {
+  const writesAny = tenant?.spaceKind === "roster" ? tenant?.isAdmin === true : tenant?.adult === true;
+  return writesAny || (!!member && run.started_by_member_id === member.id);
 }
 
 /**
@@ -383,11 +445,12 @@ export function templateCreatePlan({ row, stepRows = [], memberId }) {
 
 /**
  * Whether a run started from this template must keep its words off the runs
- * table. `runs` stays read-open (`adult_writable`) because the kiosk checklist
- * joins it as the parent of run_steps, and the hub accepts only a read-open
- * table there. Everyone reads it, so copying an adults-only template's title,
- * caregiver label and notes into it published them to every child — on Today,
- * History, the agenda surface and the event bus.
+ * table. `runs` stays read-open (`owner_or_visibility` with a visibility
+ * column locked at 'everyone', so a guest can start one) because the kiosk
+ * checklist joins it as the parent of run_steps, and the hub accepts only a
+ * read-open table there. Everyone reads it, so copying an adults-only
+ * template's title, caregiver label and notes into it published them to
+ * every child — on Today, History, the agenda surface and the event bus.
  *
  * A restricted run therefore stores those three in run_details, which carries
  * the template's visibility under `owner_or_visibility`, and leaves them blank
@@ -398,7 +461,7 @@ export function isRestrictedVisibility(visibility) {
   return visibility !== "everyone";
 }
 
-const RUN_COLUMNS = ["id", "template_id", "title_snapshot", "run_date", "status", "started_by_member_id", "target_member_id", "caregiver_label", "notes", "started_at", "completed_at", "canceled_at", "restricted"];
+const RUN_COLUMNS = ["id", "template_id", "title_snapshot", "run_date", "status", "started_by_member_id", "target_member_id", "caregiver_label", "notes", "started_at", "completed_at", "canceled_at", "restricted", "step_count"];
 const RUN_DETAIL_COLUMNS = ["id", "run_id", "started_by_member_id", "visibility", "title", "caregiver_label", "notes", "created_at"];
 const RUN_STEP_COLUMNS = ["id", "run_id", "template_step_id", "title_snapshot", "details_snapshot", "icon_snapshot", "timer_minutes", "assigned_member_id", "role_label", "required", "sort_order", "status", "completed_by_member_id", "completed_at"];
 
@@ -410,8 +473,14 @@ const RUN_STEP_COLUMNS = ["id", "run_id", "template_step_id", "title_snapshot", 
  * `template_step_id` stays NULL: nothing reads the link, and a stored one made
  * every later save of the template depend on reaching this row (see
  * migrations/004_retire_template_step_link.sql).
+ *
+ * `starterOwnsSteps`: the starter does not supervise runs (a guest), so the
+ * hub will force every step's assignee to them (run_steps is `owner_only`).
+ * Assign them here too, so the page shows what is stored rather than the
+ * template's assignees until the next reload. The run itself is still "for"
+ * whoever was chosen.
  */
-export function buildRun({ template, steps = [], runId, memberId, runDate, targetMemberId = null, caregiverLabel = "", notes = "", now, stepId }) {
+export function buildRun({ template, steps = [], runId, memberId, runDate, targetMemberId = null, caregiverLabel = "", notes = "", now, stepId, starterOwnsSteps = false }) {
   assertStepCount(steps.length);
   const restricted = isRestrictedVisibility(template.visibility);
   const run = {
@@ -421,7 +490,8 @@ export function buildRun({ template, steps = [], runId, memberId, runDate, targe
     caregiver_label: restricted ? "" : caregiverLabel,
     notes: restricted ? "" : notes,
     started_at: now, completed_at: null, canceled_at: null,
-    restricted: restricted ? 1 : 0
+    restricted: restricted ? 1 : 0,
+    step_count: steps.length
   };
   const details = restricted
     ? { id: runId, run_id: runId, started_by_member_id: memberId, visibility: template.visibility, title: template.title, caregiver_label: caregiverLabel, notes, created_at: now }
@@ -429,7 +499,8 @@ export function buildRun({ template, steps = [], runId, memberId, runDate, targe
   const runSteps = steps.map((step) => ({
     id: stepId(), run_id: runId, template_step_id: null,
     title_snapshot: step.title, details_snapshot: step.details ?? "", icon_snapshot: step.icon ?? "",
-    timer_minutes: step.timer_minutes ?? null, assigned_member_id: step.assigned_member_id || run.target_member_id,
+    timer_minutes: step.timer_minutes ?? null,
+    assigned_member_id: starterOwnsSteps ? memberId : step.assigned_member_id || run.target_member_id,
     role_label: step.role_label ?? "", required: step.required, sort_order: step.sort_order,
     status: "pending", completed_by_member_id: null, completed_at: null
   }));

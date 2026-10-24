@@ -115,7 +115,7 @@
       createShareHelper, activeShareLinks, SHARE_EXPIRY_CHOICES, DEFAULT_SHARE_EXPIRY_HOURS, glyph,
     } from "/hub-sdk.js";
     import { createShareUi, createOverlayView } from "/hub-share-ui.js";
-    import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, completionSummary, canCompleteStep, sortByOrder, visibleTemplates, searchableFields, templateSaveStatements, templateCreatePlan, packetSaveStatements, MAX_BATCH_STATEMENTS, MAX_ROUTINE_STEPS, isRunSupervisor, canArchiveTemplate, canEditTemplate, buildRun, runDisplay, mayPublishRun, showRunTo, staleRuns, staleRunClosures, visibilityChoices, ACTIVE_RUNS_SHOWN } from "./logic.js";
+    import { STARTER_TEMPLATES, ROUTINE_ICONS, normalizeIcon, completionSummary, canCompleteStep, sortByOrder, visibleTemplates, searchableFields, templateSaveStatements, templateCreatePlan, packetSaveStatements, MAX_BATCH_STATEMENTS, MAX_ROUTINE_STEPS, isRunSupervisor, canStartRun, runAccess, mayCloseRun, canArchiveTemplate, canEditTemplate, buildRun, runDisplay, mayPublishRun, showRunTo, staleRuns, staleRunClosures, visibilityChoices, ACTIVE_RUNS_SHOWN } from "./logic.js";
 
     const CONTEXT = window.__CONTEXT_URL ?? "";
     const DB = window.__DB_URL ?? "";
@@ -173,17 +173,28 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     const demoChild = { id: "demo-child", name: "Avery", role: "child" };
     const currentMember = () => ME ?? demoAdult;
     const userIsAdult = () => !ME || isAdult(currentMember(), members);
-    // Starting a run and ticking anyone's step follow run_steps' supervision
-    // reach, which in a shared space is the admin, not every adult. See
-    // isRunSupervisor in logic.js.
-    const userSupervisesRuns = () => !ME || isRunSupervisor({ tenantKind: window.__TENANT_KIND ?? "household", isAdmin: window.__IS_ADMIN === true, adult: userIsAdult() });
-
-    // Editing and archiving a template are for its owner and for whoever
-    // supervises; a co-parenting space has no supervisor over template steps.
-    // See canEditTemplate and canArchiveTemplate in logic.js.
+    // Who the viewer is here, for every gate below.
     const tenant = () => ({ tenantKind: window.__TENANT_KIND ?? "household", spaceKind: window.__SPACE_KIND ?? null, isAdmin: window.__IS_ADMIN === true, adult: userIsAdult() });
-    const userCanEditTemplate = (template) => !ME || canEditTemplate(template, currentMember(), tenant());
-    const userCanArchiveTemplate = (template) => !ME || canArchiveTemplate(template, currentMember(), tenant());
+    // Ticking anyone's step follows run_steps' supervision reach, which in a
+    // shared space is the admin, not every adult. See isRunSupervisor in logic.js.
+    const userSupervisesRuns = () => !ME || isRunSupervisor(tenant());
+
+    // Starting a run: whoever supervises, and a guest (a nanny or sitter), whose
+    // run's steps are all theirs to tick. See canStartRun in logic.js.
+    const userMayStartRuns = () => !ME || canStartRun(currentMember(), tenant());
+    // Closing, finishing and the whole-run label, on the steps the viewer reads.
+    // See runAccess in logic.js.
+    const userRunAccess = (run, visibleSteps) => !ME
+      ? { seesWhole: true, mayClose: true, mayFinish: true }
+      : runAccess(run, currentMember(), tenant(), visibleSteps);
+    // Whether the viewer may close a run at all, before any step is read.
+    const userMayCloseRun = (run) => !ME || mayCloseRun(run, currentMember(), tenant());
+    // Editing and archiving a template are for adults: its owner and whoever
+    // supervises; a co-parenting space has no supervisor over template steps.
+    // A non-adult owner (a row inserted by hand, or an adult since made a
+    // child) manages none. See canEditTemplate and canArchiveTemplate in logic.js.
+    const userCanEditTemplate = (template) => !ME || (userIsAdult() && canEditTemplate(template, currentMember(), tenant()));
+    const userCanArchiveTemplate = (template) => !ME || (userIsAdult() && canArchiveTemplate(template, currentMember(), tenant()));
 
     function memberName(id, fallback = "Anyone") {
       if (!id) return fallback;
@@ -381,7 +392,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
             <p class="muted">Reusable playbooks for household flow and share-safe caregiver instructions.</p>
           </div>
           <div class="toolbar">
-            ${loadFailed ? "" : `${userIsAdult() ? `<button class="primary" onclick="openTemplateModal()" data-testid="new-template">New Template</button>` : ""}${userSupervisesRuns() ? `<button onclick="openRunModal()" data-testid="start-routine">Start Routine</button>` : ""}`}
+            ${loadFailed ? "" : `${userIsAdult() ? `<button class="primary" onclick="openTemplateModal()" data-testid="new-template">New Template</button>` : ""}${userMayStartRuns() ? `<button onclick="openRunModal()" data-testid="start-routine">Start Routine</button>` : ""}`}
           </div>
         </header>
         <nav class="tabs">
@@ -429,9 +440,11 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       const summary = completionSummary(steps);
       const pct = summary.total ? Math.round((summary.done / summary.total) * 100) : 0;
       // Only a run supervisor reads every step. Anyone else has just the steps
-      // assigned to them, so their progress is labelled as theirs and Finish,
-      // which needs the whole run's required steps, is not offered.
-      const supervises = userSupervisesRuns();
+      // assigned to them, so their progress is labelled as theirs unless those
+      // are the whole run (a guest's own run, say). Cancel shows to whoever may
+      // close the run, Finish to whoever may also finish it; Finish itself
+      // re-judges on the stored steps.
+      const access = userRunAccess(run, steps);
       return `
         <section class="card">
           <div class="row">
@@ -442,13 +455,13 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
             </div>
             <span class="badge ${esc(run.status)}">${esc(run.status)}</span>
           </div>
-          ${supervises
+          ${access.seesWhole
             ? `<div class="progress" aria-label="${pct}% complete"><span style="--pct:${pct}%"></span></div>
           <p class="muted">${summary.done}/${summary.total} done · ${summary.doneRequired}/${summary.required} required</p>`
             : summary.total ? `<div class="progress" aria-label="${pct}% of your steps complete"><span style="--pct:${pct}%"></span></div>
           <p class="muted" data-testid="own-progress">Your steps: ${summary.done}/${summary.total} done</p>` : ""}
           <div class="steps">${steps.map((step) => renderRunStep(run, step)).join("")}</div>
-          ${run.status === "active" && userIsAdult() ? `<div class="toolbar">${supervises ? `<button onclick="completeRunIfReady('${sid(run.id)}')">Finish Routine</button>` : ""}<button class="danger" onclick="cancelRun('${sid(run.id)}')">Cancel</button></div>` : ""}
+          ${run.status === "active" && access.mayClose ? `<div class="toolbar">${access.mayFinish ? `<button onclick="completeRunIfReady('${sid(run.id)}')" data-testid="finish-run">Finish Routine</button>` : ""}<button class="danger" onclick="cancelRun('${sid(run.id)}')" data-testid="cancel-run">Cancel</button></div>` : ""}
         </section>
       `;
     }
@@ -465,7 +478,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
             </div>
             <span class="badge ${esc(step.status)}">${esc(step.status)}</span>
           </div>
-          ${canWrite ? `<div class="step-actions"><button onclick="setStepStatus('${sid(step.id)}','done')">Done</button><button onclick="setStepStatus('${sid(step.id)}','skipped')">Skip</button><button class="ghost" onclick="setStepStatus('${sid(step.id)}','pending')">Reset</button></div>` : ""}
+          ${canWrite ? `<div class="step-actions"><button onclick="setStepStatus('${sid(step.id)}','done')" data-testid="step-done">Done</button><button onclick="setStepStatus('${sid(step.id)}','skipped')">Skip</button><button class="ghost" onclick="setStepStatus('${sid(step.id)}','pending')">Reset</button></div>` : ""}
         </div>
       `;
     }
@@ -482,7 +495,9 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
           ? `<div class="grid">${rows.map(renderTemplateCard).join("")}</div>`
           : searchQ
             ? `<div class="empty">No routines match "${esc(searchQ)}".</div>`
-            : `<div class="empty">No templates yet. Add starter templates or create your own.</div>`}
+            : userIsAdult()
+              ? `<div class="empty">No templates yet. Add starter templates or create your own.</div>`
+              : `<div class="empty" data-testid="no-shared-templates">No routines are shared with you yet.</div>`}
       `;
     }
 
@@ -499,9 +514,21 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
           </div>
           <p class="muted">${esc(template.category)} · ${steps.length} steps · ${esc(memberName(template.target_member_id, "Everyone"))}</p>
           <div class="steps">${steps.map((s) => `<div class="step"><div class="step-title">${esc(s.title)}</div><p class="muted">${esc(s.details || "")}</p></div>`).join("")}</div>
-          ${userIsAdult() ? `<div class="toolbar" data-testid="template-actions" data-template-id="${esc(template.id)}">${userSupervisesRuns() ? `<button onclick="openRunModal('${sid(template.id)}')" data-testid="template-start">Start</button>` : ""}${userCanEditTemplate(template) ? `<button onclick="openTemplateModal('${sid(template.id)}')" data-testid="template-edit">Edit</button>` : ""}<button onclick="openPacketModal('${sid(template.id)}')" data-testid="template-packet">Packet</button>${userCanArchiveTemplate(template) ? `<button class="danger" onclick="archiveTemplate('${sid(template.id)}')" data-testid="template-archive">Archive</button>` : ""}</div>` : ""}
+          ${templateActions(template)}
         </section>
       `;
+    }
+
+    // The card's buttons, each on its own gate; a card with none (a child's)
+    // draws no toolbar at all. Packets are the adults' curated copy.
+    function templateActions(template) {
+      const buttons = [
+        userMayStartRuns() ? `<button onclick="openRunModal('${sid(template.id)}')" data-testid="template-start">Start</button>` : "",
+        userCanEditTemplate(template) ? `<button onclick="openTemplateModal('${sid(template.id)}')" data-testid="template-edit">Edit</button>` : "",
+        userIsAdult() ? `<button onclick="openPacketModal('${sid(template.id)}')" data-testid="template-packet">Packet</button>` : "",
+        userCanArchiveTemplate(template) ? `<button class="danger" onclick="archiveTemplate('${sid(template.id)}')" data-testid="template-archive">Archive</button>` : ""
+      ].join("");
+      return buttons ? `<div class="toolbar" data-testid="template-actions" data-template-id="${esc(template.id)}">${buttons}</div>` : "";
     }
 
     function renderPackets() {
@@ -776,7 +803,11 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
 
     window.openRunModal = (templateId = "") => {
       const options = visibleTemplates(templates);
-      if (!options.length) return hubAlert("Create a template first.", { description: "Routines start from reusable templates." });
+      if (!options.length) {
+        return userIsAdult()
+          ? hubAlert("Create a template first.", { description: "Routines start from reusable templates." })
+          : hubAlert("No routines are shared with you yet.", { description: "Someone who manages routines can share one with you." });
+      }
       const chosen = templateId || options[0].id;
       openModal(`
         <h2>Start Routine</h2>
@@ -813,7 +844,7 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
       const form = new FormData(event.target);
       const template = templates.find((t) => t.id === form.get("template_id"));
       if (!template) return;
-      if (!userSupervisesRuns()) return;
+      if (!userMayStartRuns()) return;
       const steps = sortByOrder(templateSteps.filter((s) => s.template_id === template.id));
       let built;
       try {
@@ -823,7 +854,9 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
           template, steps, runId: crypto.randomUUID(), memberId: currentMember().id,
           runDate: form.get("run_date").toString() || hubToday(), targetMemberId: form.get("target_member_id").toString(),
           caregiverLabel: form.get("caregiver_label").toString(), notes: form.get("notes").toString(),
-          now: new Date().toISOString(), stepId: () => crypto.randomUUID()
+          now: new Date().toISOString(), stepId: () => crypto.randomUUID(),
+          // A guest's run: the hub makes every step theirs, so write it that way.
+          starterOwnsSteps: !userSupervisesRuns()
         });
         await dbBatch(built.statements);
       } catch (err) {
@@ -881,8 +914,11 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
     // its own read, find the run just finished by the first, and report that
     // someone else had closed it.
     window.completeRunIfReady = (runId) => once(`finish:${runId}`, async () => {
-      // Readiness is judged on every step of the run, which only a supervisor reads.
-      if (!userSupervisesRuns()) return;
+      // Whoever may not close the run stops here; whether they may finish it is
+      // decided below, on the steps as stored, which a supervisor reads in full,
+      // and so does the starter of a run whose steps are all theirs.
+      const judged = runs.find((r) => r.id === runId);
+      if (!judged || !userMayCloseRun(judged)) return;
       // On the steps as stored now: ticks made on the kiosk since this page
       // loaded count, and without them Finish was refused until a reload. A
       // read that fails decides nothing. Falling back to what the page held
@@ -897,7 +933,14 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         runSteps = [...runSteps.filter((s) => s.run_id !== runId), ...fresh];
       }
       if (runs.find((r) => r.id === runId)?.status !== "active") return render();
-      const summary = completionSummary(runSteps.filter((s) => s.run_id === runId));
+      const judgedSteps = runSteps.filter((s) => s.run_id === runId);
+      // Someone who does not supervise reads only their own steps; one held by
+      // someone else (assigned or added later) is not theirs to judge.
+      if (!userRunAccess(judged, judgedSteps).mayFinish) {
+        render();
+        return hubAlert("Some steps belong to someone else.", { description: "Someone who manages routines can finish this one." });
+      }
+      const summary = completionSummary(judgedSteps);
       if (!summary.isComplete) {
         render();
         return hubAlert("Required steps are not finished yet.", { description: "Complete required steps before finishing the routine." });
@@ -925,9 +968,13 @@ let searchQ = "";       // in-app search (see logic.js searchableFields)
         if (fresh) Object.assign(run, fresh);
         else runs = runs.filter((r) => r.id !== runId);   // removed altogether
         render();
+        // Still active: the write was guarded on 'active', so the hub narrowed
+        // it away from this member — a permission answer, not a retry.
         return fresh && fresh.status !== "active"
           ? hubAlert("This routine was already closed somewhere else.", { description: "It has moved to History." })
-          : hubAlert(fresh ? "Could not update this routine." : "This routine is no longer there.", { description: fresh ? "Nothing was changed. Try again." : "It was removed since this page loaded." });
+          : fresh
+            ? hubAlert(`You don’t have permission to ${status === "completed" ? "finish" : "cancel"} this routine.`)
+            : hubAlert("This routine is no longer there.", { description: "It was removed since this page loaded." });
       }
       Object.assign(run, { status, completed_at: completedAt, canceled_at: canceledAt });
       if (status === "completed" && mayPublishRun(run)) publish("routine.completed", runId, { title: run.title_snapshot });

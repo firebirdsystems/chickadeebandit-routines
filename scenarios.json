@@ -513,6 +513,353 @@
         { "action": "db", "as": "author", "sql": "SELECT id, owner_member_id FROM app_routines__templates WHERE id = 't-new'", "expect": {"status":200,"rowCount":1,"rowsContain":[{"id":"t-new"}]} },
         { "action": "db", "as": "kid", "sql": "SELECT id FROM app_routines__template_steps WHERE template_id = 't-new' ORDER BY sort_order ASC", "expect": {"status":200,"rowCount":7,"rowsContain":[{"id":"s-new-0"},{"id":"s-new-6"}]} }
       ]
+    },
+    {
+      "name": "a guest nanny starts a run from a template everyone can see and ticks its steps, which the household then sees; she sees no adults-only template, cannot remove a run, and cannot read a caregiver packet; a child ticks none of her steps; the parent removes the run",
+      "members": { "parent": "adult", "nanny": "guest", "kid": "child" },
+      "granted": ["nanny"],
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__templates (id, title, category, visibility, owner_member_id, target_member_id, created_at, updated_at) VALUES ('t-bed', 'Bedtime', 'household', 'everyone', ?, ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": ["{{parent}}", "{{kid}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, assigned_member_id, sort_order, required, created_by_member_id, created_at, updated_at) VALUES ('ts-bath', 't-bed', 'Bath', ?, 0, 1, ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": ["{{kid}}", "{{parent}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, sort_order, required, created_by_member_id, created_at, updated_at) VALUES ('ts-story', 't-bed', 'Story', 1, 1, ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": ["{{parent}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__templates (id, title, category, visibility, owner_member_id, created_at, updated_at) VALUES ('t-adults', 'Date night prep', 'household', 'adults', ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": ["{{parent}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__template_steps (id, template_id, title, sort_order, required, created_by_member_id, created_at, updated_at) VALUES ('ts-adults', 't-adults', 'Hide the presents', 0, 1, ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": ["{{parent}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__caregiver_packets (id, title, safe_notes, created_by_member_id, created_at, updated_at) VALUES ('pk-bed', 'Bedtime for the sitter', 'Lights out at 8', ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": ["{{parent}}"]
+        },
+        {
+          "comment": "The nanny sees the everyone template and its steps, and nothing of the adults-only one: there is nothing for her to start a run from.",
+          "action": "db",
+          "as": "nanny",
+          "sql": "SELECT id FROM app_routines__templates",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "id": "t-bed" }] }
+        },
+        {
+          "action": "db",
+          "as": "nanny",
+          "sql": "SELECT id FROM app_routines__template_steps WHERE template_id = 't-adults'",
+          "expect": { "status": 200, "rowCount": 0 }
+        },
+        {
+          "action": "batch",
+          "as": "nanny",
+          "statements": [{ "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, caregiver_label, notes, started_at, completed_at, canceled_at, restricted, step_count) VALUES ('r-bed', 't-bed', 'Bedtime', '2026-01-02', 'active', ?, ?, '', '', '2026-01-02T19:00:00Z', NULL, NULL, 0, 2)", "params": ["{{nanny}}", "{{kid}}"] }, { "sql": "INSERT INTO app_routines__run_steps (id, run_id, template_step_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES ('rs-bath', 'r-bed', NULL, 'Bath', '', '', NULL, ?, '', 1, 0, 'pending', NULL, NULL)", "params": ["{{nanny}}"] }, { "sql": "INSERT INTO app_routines__run_steps (id, run_id, template_step_id, title_snapshot, details_snapshot, icon_snapshot, timer_minutes, assigned_member_id, role_label, required, sort_order, status, completed_by_member_id, completed_at) VALUES ('rs-story', 'r-bed', NULL, 'Story', '', '', NULL, ?, '', 1, 1, 'pending', NULL, NULL)", "params": ["{{nanny}}"] }],
+          "expect": { "status": 200, "changed": [1, 1, 1] }
+        },
+        {
+          "comment": "That batch is the start the page sends: the run and every step as one. The run is for the kid; the steps are the nanny's, as the hub would make them anyway (run_steps is owner_only and she is not an adult). The hub stamped the run with her and the visibility column kept its default.",
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT id, visibility FROM app_routines__runs WHERE id = 'r-bed' AND started_by_member_id = ? AND target_member_id = ?",
+          "params": ["{{nanny}}", "{{kid}}"],
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "id": "r-bed", "visibility": "everyone" }] }
+        },
+        {
+          "comment": "She ticks a step, guarded on the status the page last saw.",
+          "action": "db",
+          "as": "nanny",
+          "sql": "UPDATE app_routines__run_steps SET status = 'done', completed_by_member_id = ?, completed_at = '2026-01-02T19:20:00Z' WHERE id = 'rs-bath' AND status = 'pending'",
+          "params": ["{{nanny}}"],
+          "expect": { "status": 200 }
+        },
+        {
+          "comment": "The next person sees the run and where it stands: the parent every step, the kid the run.",
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT id, status FROM app_routines__run_steps WHERE run_id = 'r-bed' ORDER BY sort_order",
+          "expect": { "status": 200, "rowCount": 2, "rowsContain": [{ "id": "rs-bath", "status": "done" }, { "id": "rs-story", "status": "pending" }] }
+        },
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "SELECT id, status FROM app_routines__runs WHERE id = 'r-bed'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "id": "r-bed", "status": "active" }] }
+        },
+        {
+          "comment": "The kid did not start it: the steps are not theirs to tick (owner_only narrows the write to nothing) and the status is not theirs to change.",
+          "action": "db",
+          "as": "kid",
+          "sql": "UPDATE app_routines__run_steps SET status = 'done' WHERE id = 'rs-story'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT status FROM app_routines__run_steps WHERE id = 'rs-story'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "status": "pending" }] }
+        },
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "UPDATE app_routines__runs SET status = 'canceled', canceled_at = '2026-01-02T19:30:00Z' WHERE id = 'r-bed' AND status = 'active'",
+          "expect": { "status": 200 }
+        },
+        {
+          "comment": "A run is its starter's or a supervisor's to write: the kid's UPDATE is narrowed to their own runs and lands on nothing.",
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT status FROM app_routines__runs WHERE id = 'r-bed'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "status": "active" }] }
+        },
+        {
+          "comment": "Nobody rewrites who started it.",
+          "action": "db",
+          "as": "nanny",
+          "sql": "UPDATE app_routines__runs SET started_by_member_id = ? WHERE id = 'r-bed'",
+          "params": ["{{parent}}"],
+          "expect": { "status": 403, "errorIncludes": "started_by_member_id" }
+        },
+        {
+          "comment": "She may not remove a run; only an adult may.",
+          "action": "db",
+          "as": "nanny",
+          "sql": "DELETE FROM app_routines__runs WHERE id = 'r-bed'",
+          "expect": { "status": 403, "errorIncludes": "adult" }
+        },
+        {
+          "comment": "The caregiver packet stays the adults' curated copy.",
+          "action": "db",
+          "as": "nanny",
+          "sql": "SELECT id, safe_notes FROM app_routines__caregiver_packets",
+          "expect": { "status": 403, "errorIncludes": "adult" }
+        },
+        {
+          "comment": "She finishes her own run.",
+          "action": "db",
+          "as": "nanny",
+          "sql": "UPDATE app_routines__runs SET status = 'completed', completed_at = '2026-01-02T19:45:00Z' WHERE id = 'r-bed' AND status = 'active'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT status FROM app_routines__runs WHERE id = 'r-bed'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "status": "completed" }] }
+        },
+        {
+          "comment": "The parent removes it, steps first.",
+          "action": "db",
+          "as": "parent",
+          "sql": "DELETE FROM app_routines__run_steps WHERE run_id = 'r-bed'",
+          "expect": { "status": 200 }
+        },
+        { "action": "db", "as": "parent", "sql": "DELETE FROM app_routines__runs WHERE id = 'r-bed'", "expect": { "status": 200 } },
+        { "action": "db", "as": "nanny", "sql": "SELECT id FROM app_routines__runs", "expect": { "status": 200, "rowCount": 0 } }
+      ]
+    },
+    {
+      "name": "a run is written by an adult or its starter: a child's or a guest's UPDATE of a parent's run changes nothing, the nanny finishes her own run but cannot rewrite its step count, and the parent edits and cancels a run the nanny started",
+      "members": { "parent": "adult", "nanny": "guest", "kid": "child" },
+      "granted": ["nanny"],
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__templates (id, title, category, visibility, owner_member_id, created_at, updated_at) VALUES ('t-bed', 'Bedtime', 'household', 'everyone', ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": ["{{parent}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, caregiver_label, notes, started_at, completed_at, canceled_at, restricted, step_count) VALUES ('r-parent', 't-bed', 'Bedtime', '2026-01-02', 'active', ?, NULL, '', 'Lights out at 8', '2026-01-02T19:00:00Z', NULL, NULL, 0, 0)",
+          "params": ["{{parent}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, caregiver_label, notes, started_at, completed_at, canceled_at, restricted, step_count) VALUES ('r-nanny-1', 't-bed', 'Bedtime', '2026-01-03', 'active', ?, NULL, '', 'Lights out at 8', '2026-01-03T19:00:00Z', NULL, NULL, 0, 0)",
+          "params": ["{{nanny}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, caregiver_label, notes, started_at, completed_at, canceled_at, restricted, step_count) VALUES ('r-nanny-2', 't-bed', 'Bedtime', '2026-01-04', 'active', ?, NULL, '', 'Lights out at 8', '2026-01-04T19:00:00Z', NULL, NULL, 0, 0)",
+          "params": ["{{nanny}}"]
+        },
+        {
+          "comment": "Every member reads every run in a household.",
+          "action": "db",
+          "as": "kid",
+          "sql": "SELECT id FROM app_routines__runs WHERE id = 'r-parent'",
+          "expect": { "status": 200, "rowCount": 1 }
+        },
+        {
+          "comment": "Reading a run is not writing it: every column of a run is an adult's or its starter's, so the kid's UPDATE is narrowed to the runs they started and lands on nothing.",
+          "action": "db",
+          "as": "kid",
+          "sql": "UPDATE app_routines__runs SET title_snapshot = 'Pizza party', run_date = '2030-01-01', notes = 'No bedtime', status = 'canceled' WHERE id = 'r-parent'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT title_snapshot, run_date, notes, status FROM app_routines__runs WHERE id = 'r-parent'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "title_snapshot": "Bedtime", "run_date": "2026-01-02", "notes": "Lights out at 8", "status": "active" }] }
+        },
+        {
+          "comment": "Nor does the nanny reach the parent's run.",
+          "action": "db",
+          "as": "nanny",
+          "sql": "UPDATE app_routines__runs SET title_snapshot = 'Movie night', status = 'canceled' WHERE id = 'r-parent'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT title_snapshot, status FROM app_routines__runs WHERE id = 'r-parent'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "title_snapshot": "Bedtime", "status": "active" }] }
+        },
+        {
+          "comment": "She finishes her own run, as the page does.",
+          "action": "db",
+          "as": "nanny",
+          "sql": "UPDATE app_routines__runs SET status = 'completed', completed_at = '2026-01-03T19:45:00Z' WHERE id = 'r-nanny-1' AND status = 'active'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT status FROM app_routines__runs WHERE id = 'r-nanny-1'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "status": "completed" }] }
+        },
+        {
+          "comment": "The step count the page judges her Finish against is frozen at the start.",
+          "action": "db",
+          "as": "nanny",
+          "sql": "UPDATE app_routines__runs SET step_count = 5 WHERE id = 'r-nanny-2'",
+          "expect": { "status": 403, "errorIncludes": "step_count" }
+        },
+        {
+          "comment": "The parent is an adult: they edit and cancel a run the nanny started.",
+          "action": "db",
+          "as": "parent",
+          "sql": "UPDATE app_routines__runs SET notes = 'Bath first' WHERE id = 'r-nanny-2'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "UPDATE app_routines__runs SET status = 'canceled', canceled_at = '2026-01-04T20:00:00Z' WHERE id = 'r-nanny-2' AND status = 'active'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT notes, status FROM app_routines__runs WHERE id = 'r-nanny-2'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "notes": "Bath first", "status": "canceled" }] }
+        },
+        { "action": "db", "as": "parent", "sql": "UPDATE app_routines__runs SET title_snapshot = 'Early bedtime' WHERE id = 'r-parent'", "expect": { "status": 200 } },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT title_snapshot FROM app_routines__runs WHERE id = 'r-parent'",
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "title_snapshot": "Early bedtime" }] }
+        }
+      ]
+    },
+    {
+      "name": "in a co-parenting space, where both parents hold the space, one parent finishes and cancels runs the other started, but cannot rewrite who started one",
+      "context": "shared_space.coparenting",
+      "members": { "mom": "admin", "dad": "admin" },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, caregiver_label, notes, started_at, completed_at, canceled_at, restricted, step_count) VALUES ('r-dad-1', NULL, 'Handoff', '2026-09-02', 'active', ?, NULL, '', '', '2026-09-02T17:00:00Z', NULL, NULL, 0, 1)",
+          "params": ["{{dad}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, caregiver_label, notes, started_at, completed_at, canceled_at, restricted, step_count) VALUES ('r-dad-2', NULL, 'Handoff', '2026-09-03', 'active', ?, NULL, '', '', '2026-09-03T17:00:00Z', NULL, NULL, 0, 1)",
+          "params": ["{{dad}}"]
+        },
+        {
+          "comment": "Writes follow reads, and every column of a run is writable by any adult.",
+          "action": "db",
+          "as": "mom",
+          "sql": "UPDATE app_routines__runs SET status = 'canceled', canceled_at = '2026-09-02T18:00:00Z' WHERE id = 'r-dad-1' AND status = 'active'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "mom",
+          "sql": "UPDATE app_routines__runs SET status = 'completed', completed_at = '2026-09-03T18:00:00Z' WHERE id = 'r-dad-2' AND status = 'active'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "dad",
+          "sql": "SELECT id, status FROM app_routines__runs WHERE id IN ('r-dad-1', 'r-dad-2') ORDER BY id",
+          "expect": { "status": 200, "rowCount": 2, "rowsContain": [{ "id": "r-dad-1", "status": "canceled" }, { "id": "r-dad-2", "status": "completed" }] }
+        },
+        {
+          "action": "db",
+          "as": "mom",
+          "sql": "UPDATE app_routines__runs SET started_by_member_id = ? WHERE id = 'r-dad-1'",
+          "params": ["{{mom}}"],
+          "expect": { "status": 403, "errorIncludes": "started_by_member_id" }
+        }
+      ]
+    },
+    {
+      "name": "in a general shared space a participant adult who is not the steward finishes and cancels runs another adult started, but cannot rewrite who started one",
+      "context": "shared_space",
+      "members": { "a": "adult", "b": "adult", "steward": "admin" },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, caregiver_label, notes, started_at, completed_at, canceled_at, restricted, step_count) VALUES ('r-b-1', NULL, 'Handoff', '2026-09-02', 'active', ?, NULL, '', '', '2026-09-02T17:00:00Z', NULL, NULL, 0, 1)",
+          "params": ["{{b}}"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_routines__runs (id, template_id, title_snapshot, run_date, status, started_by_member_id, target_member_id, caregiver_label, notes, started_at, completed_at, canceled_at, restricted, step_count) VALUES ('r-b-2', NULL, 'Handoff', '2026-09-03', 'active', ?, NULL, '', '', '2026-09-03T17:00:00Z', NULL, NULL, 0, 1)",
+          "params": ["{{b}}"]
+        },
+        {
+          "comment": "Writes follow reads, and every column of a run is writable by any adult.",
+          "action": "db",
+          "as": "a",
+          "sql": "UPDATE app_routines__runs SET status = 'canceled', canceled_at = '2026-09-02T18:00:00Z' WHERE id = 'r-b-1' AND status = 'active'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "a",
+          "sql": "UPDATE app_routines__runs SET status = 'completed', completed_at = '2026-09-03T18:00:00Z' WHERE id = 'r-b-2' AND status = 'active'",
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "SELECT id, status FROM app_routines__runs WHERE id IN ('r-b-1', 'r-b-2') ORDER BY id",
+          "expect": { "status": 200, "rowCount": 2, "rowsContain": [{ "id": "r-b-1", "status": "canceled" }, { "id": "r-b-2", "status": "completed" }] }
+        },
+        {
+          "action": "db",
+          "as": "a",
+          "sql": "UPDATE app_routines__runs SET started_by_member_id = ? WHERE id = 'r-b-1'",
+          "params": ["{{a}}"],
+          "expect": { "status": 403, "errorIncludes": "started_by_member_id" }
+        }
+      ]
     }
   ]
 }
